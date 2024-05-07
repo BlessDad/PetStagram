@@ -15,12 +15,16 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.petstagram.petstagram",
+      "config": {"googleMaps": {"apiKey": "AIzaSyAUjFOO3b2JNaZ4M8hQP0Ke_xtbzMgK-W8"}}
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#ffffff",
+        "package": "com.petstagram.petstagram",
+        "config": {"googleMaps": {"apiKey": "AIzaSyAUjFOO3b2JNaZ4M8hQP0Ke_xtbzMgK-W8"}}
       }
     },
     "web": {

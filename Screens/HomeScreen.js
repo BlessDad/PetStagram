@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   postImage: {
-    width: 375,
-    height: 375,
+    width: 380,
+    height: 380,
     marginBottom: 10,
   },
   buttonsContainer: {
