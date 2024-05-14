@@ -12,7 +12,7 @@ export default function App() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://223.194.139.12:3000/api/getPost');
+      const response = await axios.get('http://223.194.139.89:3000/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -26,7 +26,7 @@ export default function App() {
   const handleAddPost = async () => {
     if (title.trim() !== '' && content.trim() !== '') {
       try {
-        await axios.post('http://223.194.139.12:3000/api/insert', {
+        await axios.post('http://223.194.139.89:3000/api/insert', {
           title: title,
           content: content
         });
@@ -41,7 +41,7 @@ export default function App() {
 
   const handleDeletePost = async (id) => {
     try {
-      await axios.delete(`http://223.194.139.12:3000/api/deletePost/${id}`);
+      await axios.delete(`http://223.194.139.89:3000/api/deletePost/${id}`);
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
     } catch (error) {
@@ -52,7 +52,7 @@ export default function App() {
 
   const handleEditPost = async (id) => {
     try {
-      await axios.put(`http://223.194.139.12:3000/api/updatePost/${id}`, {
+      await axios.put(`http://223.194.139.89:3000/api/updatePost/${id}`, {
         title: editingTitle,
         content: editingContent
       });
