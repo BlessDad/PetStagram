@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 
 export default function HomeScreen() {
   const posts = [
@@ -12,7 +12,7 @@ export default function HomeScreen() {
 
   const [likeCounts, setLikeCounts] = useState({});
   const [comments, setComments] = useState({});
-  const [commentText, setCommentText] = useState('')
+  const [commentText, setCommentText] = useState('');
 
   const handleLike = (postId) => {
     setLikeCounts((prevLikeCounts) => ({
@@ -21,19 +21,19 @@ export default function HomeScreen() {
     }));
   };
 
-  const handleChat = (postId) => { // chat  버튼을 누르면 호출되는 함수
+  const handleChat = (postId) => {
     setComments((prevComments) => ({
       ...prevComments,
       [postId]: !prevComments[postId],
     }));
   };
 
-  const handleCommentSubmit = (postId) => { // 댓글을 게시
+  const handleCommentSubmit = (postId) => {
     if (commentText.trim() !== '') {
-      setCommentText(''); // 입력 필드를 초기화
+      setCommentText('');
       setComments((prevComments) => ({
         ...prevComments,
-        [postId]: false, // 댓글 입력 상태를 닫습니다.
+        [postId]: false,
       }));
     }
   };
@@ -92,15 +92,15 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
       {renderPosts()}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
   },
   postContainer: {
     padding: 20,
@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   postImage: {
-    width: 380,
-    height: 380,
+    width: '100%', // 전체 너비로 조정
+    height: 375,
     marginBottom: 10,
   },
   buttonsContainer: {
@@ -168,11 +168,5 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-  },
-  username: {
-    fontWeight: 'bold',
-  },
-  postText: {
-    fontSize: 14,
   },
 });

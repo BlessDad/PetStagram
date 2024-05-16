@@ -1331,7 +1331,7 @@
   "resolved" "https://registry.npmjs.org/@expo/config-types/-/config-types-51.0.0.tgz"
   "version" "51.0.0"
 
-"@expo/config@~9.0.0-beta.0", "@expo/config@9.0.1":
+"@expo/config@^9.0.1", "@expo/config@~9.0.0-beta.0", "@expo/config@9.0.1":
   "integrity" "sha512-0tjaXBstTbXmD4z+UMFBkh2SZFwilizSQhW6DlaTMnPG5ezuw93zSFEWAuEC3YzkpVtNQTmYzxAYjxwh6seOGg=="
   "resolved" "https://registry.npmjs.org/@expo/config/-/config-9.0.1.tgz"
   "version" "9.0.1"
@@ -1426,6 +1426,11 @@
     "lightningcss" "~1.19.0"
     "postcss" "~8.4.32"
     "resolve-from" "^5.0.0"
+
+"@expo/metro-runtime@^3.2.1":
+  "integrity" "sha512-L7xNo5SmK+rcuXDm/+VBBImpA7FZsVB+m/rNr3fNl5or+1+yrZe99ViF7LZ8DOoVqAqcb4aCAXvGrP2JNYo1/Q=="
+  "resolved" "https://registry.npmjs.org/@expo/metro-runtime/-/metro-runtime-3.2.1.tgz"
+  "version" "3.2.1"
 
 "@expo/osascript@^2.0.31":
   "integrity" "sha512-/ugqDG+52uzUiEpggS9GPdp9g0U9EQrXcTdluHDmnlGmR2nV/F83L7c+HCUyPnf77QXwkr8gQk16vQTbxBQ5eA=="
