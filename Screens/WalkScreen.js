@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function WalkScreen() {
   const [location, setLocation] = useState(null);
@@ -9,11 +10,11 @@ export default function WalkScreen() {
   const [coordinates, setCoordinates] = useState([]);
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [distance, setDistance] = useState(0);
-  const [pace, setPace] = useState(0);
+  const [totalDistance, setTotalDistance] = useState(0); // 누적 거리
   const [calories, setCalories] = useState(0);
-  const mapViewRef = useRef(null); // mapViewRef 생성
+  const mapViewRef = useRef(null);
   const lastLocationRef = useRef(null);
+  const startTimeRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -23,33 +24,41 @@ export default function WalkScreen() {
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      lastLocationRef.current = location;
+      let initialLocation = await Location.getCurrentPositionAsync({});
+      setLocation(initialLocation);
+      lastLocationRef.current = initialLocation;
 
-      // 실시간 위치 업데이트를 위한 구독
-      Location.watchPositionAsync({ distanceInterval: 10 }, (newLocation) => {
+      Location.watchPositionAsync({ distanceInterval: 1 }, (newLocation) => {
         if (isRunning) {
           setLocation(newLocation);
-          setCoordinates(prevCoordinates => [...prevCoordinates, {
-            latitude: newLocation.coords.latitude,
-            longitude: newLocation.coords.longitude
-          }]);
+          setCoordinates(prevCoordinates => [
+            ...prevCoordinates, 
+            {
+              latitude: newLocation.coords.latitude,
+              longitude: newLocation.coords.longitude
+            }
+          ]);
 
-          // 이동 거리, 칼로리, 페이스 계산
-          const newDistance = distance + calculateDistance(lastLocationRef.current.coords.latitude, lastLocationRef.current.coords.longitude, newLocation.coords.latitude, newLocation.coords.longitude);
-          const newPace = calculatePace(newDistance, timer);
-          const newCalories = calculateCalories(newDistance);
+          // 이전 위치와 새 위치 사이의 거리 계산
+          const newDistance = calculateDistance(
+            lastLocationRef.current.coords.latitude,
+            lastLocationRef.current.coords.longitude,
+            newLocation.coords.latitude,
+            newLocation.coords.longitude
+          );
 
-          setDistance(newDistance);
-          setPace(newPace);
+          // 누적 거리 갱신
+          setTotalDistance(prevDistance => prevDistance + newDistance);
+
+          // 평균 페이스, 칼로리 계산 및 설정
+          distance = totalDistance + newDistance
+          const newCalories = calculateCalories(distance);
           setCalories(newCalories);
-
           lastLocationRef.current = newLocation;
         }
       });
     })();
-  }, []);
+  }, [isRunning, totalDistance]);
 
   useEffect(() => {
     let intervalId;
@@ -65,7 +74,7 @@ export default function WalkScreen() {
   }, [isRunning]);
 
   useEffect(() => {
-    if (location) {
+    if (location && mapViewRef.current) {
       mapViewRef.current.animateToRegion({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
@@ -102,16 +111,7 @@ export default function WalkScreen() {
     return d;
   };
 
-  const calculatePace = (distance, time) => {
-    if (distance === 0 || time === 0) return 0;
-    const paceInSeconds = time / distance;
-    const paceInMinutes = paceInSeconds / 60;
-    return paceInMinutes;
-  };
-
   const calculateCalories = (distance) => {
-    // Simple formula for calorie calculation
-    // Assuming 0.06 calories burned per meter
     const caloriesBurnedPerMeter = 0.06;
     return distance * caloriesBurnedPerMeter;
   };
@@ -127,7 +127,7 @@ export default function WalkScreen() {
     <View style={styles.container}>
       <View style={styles.mapContainer}>
         <MapView
-          ref={mapViewRef} // mapViewRef 연결
+          ref={mapViewRef}
           style={{ flex: 1 }}
           initialRegion={{
             latitude: location ? location.coords.latitude : 37.78825,
@@ -141,16 +141,29 @@ export default function WalkScreen() {
         </MapView>
       </View>
       <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>Distance: {distance.toFixed(2)} meters</Text>
-        <Text style={styles.infoText}>Calories: {calories.toFixed(2)}</Text>
-        <Text style={styles.infoText}>Pace: {pace.toFixed(2)} minutes/km</Text>
+        <Text style={styles.bigText}>{formatTime(timer)}</Text>
+        <Text style={styles.smallText}>산책시간</Text>
       </View>
-      <View style={styles.timerContainer}>
-        <Text style={styles.timerText}>{formatTime(timer)}</Text>
+      <View style={styles.statsContainer}>
+        <View style={styles.statsValueContainer}>
+          <Text style={styles.statsValue}>{totalDistance.toFixed(2)}</Text>
+          <Text style={styles.smallText}>거리(meter)</Text>
+        </View>
+        <View style={styles.statsValueContainer}>
+          <Text style={styles.statsValue}>{calories.toFixed(2)}</Text>
+          <Text style={styles.smallText}>칼로리(kcal)</Text>
+        </View>
       </View>
       <View style={styles.buttonContainer}>
-        <Button title={isRunning ? "Stop" : "Start"} onPress={handleStartStop} />
+        <TouchableOpacity style={styles.startButton} onPress={handleStartStop}>
+          {isRunning ? (
+            <Icon name="stop" size={30} color="#fff" />
+          ) : (
+            <Icon name="play" size={30} color="#fff" />
+          )}
+        </TouchableOpacity>
       </View>
+
     </View>
   );
 }
@@ -159,30 +172,51 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
-    justifyContent: 'flex-start',
   },
   mapContainer: {
     flex: 4,
   },
   infoContainer: {
+    backgroundColor: 'white',
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  infoText: {
-    fontSize: 16,
-  },
-  timerContainer: {
-    flex: 1,
+  statsContainer: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 10,
   },
-  timerText: {
-    fontSize: 24,
+  statsValueContainer: {
+    alignItems: 'center',
   },
   buttonContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  bigText: {
+    fontSize: 36,
+    fontWeight: 'bold'
+  },
+  smallText: {
+    color: 'gray',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  statsValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  startButton: {
+    backgroundColor: 'skyblue',
+    borderRadius: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

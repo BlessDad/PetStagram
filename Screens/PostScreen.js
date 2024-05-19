@@ -17,7 +17,7 @@ export default function App() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://223.194.136.30:3000/api/getPost');
+      const response = await axios.get('http://192.168.35.233:3000/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -29,37 +29,34 @@ export default function App() {
   }, []);
 
   const pickImage = async (setImageCallback) => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
   
-    console.log(result);
-  
-    if (!result.canceled) {
+    if (!result.cancelled && result.assets.length > 0 && result.assets[0].uri) {
       setImageCallback(result.assets[0].uri);
+      setImageURI(result.assets[0].uri);
     }
   };
 
-  const uploadImage = async (uri) => {
+  const uploadImage = async (uri, fileName) => {
     const formData = new FormData();
     formData.append('image', {
       uri,
-      type: 'image/jpeg', // 이미지 타입 (필요에 따라 수정)
-      name: 'photo.jpg', // 이미지 이름 (필요에 따라 수정)
+      type: 'image/jpeg', // 이미지 타입
+      name: fileName, // 이미지 이름
     });
   
     try {
-      const response = await axios.post('http://223.194.136.30:3000/api/upload', formData, {
+      const response = await axios.post('http://192.168.35.233:3000/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log(response.data); // 서버 응답 로그 출력
-      console.log('Uploaded Image URL:', response.data.imageUrl); // 서버 응답 로그 출력
-      return response.data.imageUrl;
+      return response.data.imageUrl; // 서버 응답에서 이미지 URL을 반환
     } catch (error) {
       console.error('Image upload failed: ', error);
       return null;
@@ -70,19 +67,15 @@ export default function App() {
     if (title.trim() !== '' && content.trim() !== '') {
       let imageUrl = null;
       if (imageURI) {
-        imageUrl = await uploadImage(imageURI);
-        console.log('Image URL:', imageUrl); // 이미지 URL 로그 출력
+        const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
+        imageUrl = await uploadImage(imageURI, fileName);
       }
-  
       try {
-        const response = await axios.post('http://223.194.136.30:3000/api/insert', {
+        const response = await axios.post('http://192.168.35.233:3000/api/insert', {
           title: title,
           content: content,
-          image: imageUrl, // 이미지 URL을 포함하여 요청 전송
+          imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
         });
-  
-        console.log('Server Response:', response.data); // 서버 응답 로그 출력
-  
         setTitle('');
         setContent('');
         setImageURI(null);
@@ -99,7 +92,7 @@ export default function App() {
 
   const handleDeletePost = async (id) => {
     try {
-      await axios.delete(`http://223.194.136.30:3000/api/deletePost/${id}`);
+      await axios.delete(`http://192.168.35.233:3000/api/deletePost/${id}`);
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
     } catch (error) {
@@ -110,22 +103,24 @@ export default function App() {
 
   const handleEditPost = async (id) => {
     let imageUrl = editingImageURI;
-    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image) {
-      imageUrl = await uploadImage(editingImageURI);
+    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image_url) {
+      const fileName = `${editingTitle.replace(/\s+/g, '_')}.jpg`; 
+      imageUrl = await uploadImage(editingImageURI, fileName);
     }
 
     try {
-      await axios.put(`http://223.194.136.30:3000/api/updatePost/${id}`, {
+      await axios.put(`http://192.168.35.233:3000/api/updatePost/${id}`, {
         title: editingTitle,
         content: editingContent,
-        image: imageUrl,
+        imageUrl: imageUrl,
       });
       fetchPosts();
       setIsEditing(null); // 수정 완료 후 상태 초기화
       Alert.alert('게시물 수정 성공', '게시물이 성공적으로 수정되었습니다.');
       setEditingTitle(''); // 수정 완료 후 입력 필드 초기화
-      setEditingContent(''); // 수정 완료 후 입력 필드 초기화
-      setEditingImageURI(null); // 수정 완료 후 입력 필드 초기화
+      setEditingContent(''); 
+      setEditingImageURI(null); 
+      setImageURI(null);
     } catch (error) {
       console.error('게시물 수정 실패:', error);
       Alert.alert('게시물 수정 실패', '게시물 수정 중 오류가 발생했습니다.');
@@ -139,18 +134,48 @@ export default function App() {
         data={posts}
         renderItem={({ item }) => (
           <View style={styles.postItem}>
-            <Text>제목: {item.title}</Text>
-            <Text>내용: {item.content}</Text>
-            {item.image && <Image source={{ uri: item.image }} style={styles.image} />}
-            <View style={styles.buttonContainer}>
-              <Button title="수정" onPress={() => {
-                setIsEditing(item.id);
-                setEditingTitle(item.title);
-                setEditingContent(item.content);
-                setEditingImageURI(item.image);
-              }} />
-              <Button title="삭제" onPress={() => handleDeletePost(item.id)} />
-            </View>
+            {isEditing == item.id ? (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  value={editingTitle}
+                  onChangeText={setEditingTitle}
+                  placeholder="사용자를 입력하세요"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={editingContent}
+                  onChangeText={setEditingContent}
+                  placeholder="내용을 입력하세요"
+                  multiline={true}
+                  numberOfLines={4}
+                />
+                <TouchableOpacity onPress={() => pickImage(setEditingImageURI)}>
+                  {editingImageURI ? (
+                    <Image source={{ uri: editingImageURI }} style={styles.image} />
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <MaterialIcons name="add-a-photo" size={50} color="gray" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Button title="수정 완료" onPress={() => handleEditPost(item.id)} />
+              </View>
+            ) : (
+              <View>
+                <Text>사용자: {item.title}</Text>
+                <Text>내용: {item.content}</Text>
+                {item.image_url && (
+                  <View>
+                    <Image source={{ uri: item.image_url }} style={styles.image} />
+                  </View>
+                )}
+                <View style={styles.buttonContainer}>
+                  <Button title="수정" onPress={() => setIsEditing(item.id)} />
+                  <Button title="삭제" onPress={() => handleDeletePost(item.id)} />
+                </View>
+              </View>
+            )}
           </View>
         )}
         keyExtractor={(item) => item.id.toString()}
@@ -161,7 +186,7 @@ export default function App() {
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="제목을 입력하세요"
+            placeholder="사용자를 입력하세요"
           />
           <TextInput
             style={styles.input}

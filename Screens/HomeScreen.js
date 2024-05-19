@@ -1,18 +1,51 @@
-import React, { useState } from 'react';
-import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, FlatList, RefreshControl } from 'react-native';
+import axios from 'axios';
 
 export default function HomeScreen() {
-  const posts = [
-    { id: 1, username: 'user1', text: 'Post 1', image: require('../assets/image1.jpg') },
-    { id: 2, username: 'user2', text: 'Post 2', image: require('../assets/image2.jpg') },
-    { id: 3, username: 'user3', text: 'Post 3', image: require('../assets/image3.jpg') },
-    { id: 4, username: 'user4', text: 'Post 4', image: require('../assets/image4.jpg') },
-    { id: 5, username: 'user5', text: 'Post 5', image: require('../assets/image5.jpg') },
-  ];
-
+  const [posts, setPosts] = useState([]);
   const [likeCounts, setLikeCounts] = useState({});
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const response = await axios.get('http://192.168.35.233:3000/api/getPost');
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error loading posts: ", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPosts();
+    setRefreshing(false);
+  };
+
+  const fetchComments = async (postId) => {
+    try {
+      const response = await axios.get(`http://192.168.35.233:3000/api/getComments/${postId}`);
+      setComments((prevComments) => ({
+        ...prevComments,
+        [postId]: { showComments: true, comments: response.data }
+      }));
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setComments((prevComments) => ({
+          ...prevComments,
+          [postId]: { showComments: true, comments: [] }
+        }));
+      } else {
+        console.error("Error loading comments: ", error);
+      }
+    }
+  };
 
   const handleLike = (postId) => {
     setLikeCounts((prevLikeCounts) => ({
@@ -21,20 +54,40 @@ export default function HomeScreen() {
     }));
   };
 
-  const handleChat = (postId) => {
-    setComments((prevComments) => ({
-      ...prevComments,
-      [postId]: !prevComments[postId],
-    }));
-  };
-
-  const handleCommentSubmit = (postId) => {
-    if (commentText.trim() !== '') {
-      setCommentText('');
+  const handleChat = async (postId) => {
+    if (!comments[postId]) {
+      await fetchComments(postId);
+    } else {
       setComments((prevComments) => ({
         ...prevComments,
-        [postId]: false,
+        [postId]: { ...prevComments[postId], showComments: !prevComments[postId].showComments }
       }));
+    }
+  };
+
+  const handleCommentSubmit = async (postId) => {
+    if (commentText.trim() !== '') {
+      try {
+        await axios.post('http://192.168.35.233:3000/api/addComment', {
+          postId,
+          comment: commentText,
+        });
+        setCommentText('');
+        await fetchComments(postId);
+      } catch (error) {
+        console.error('댓글 추가 실패:', error);
+        Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    try {
+      await axios.delete(`http://192.168.35.233:3000/api/deleteComment/${commentId}`);
+      await fetchComments(postId);
+    } catch (error) {
+      console.error('댓글 삭제 실패:', error);
+      Alert.alert('댓글 삭제 실패', '댓글 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -46,31 +99,43 @@ export default function HomeScreen() {
     // Save 버튼 클릭 시 처리할 로직
   };
 
-  const renderPosts = () => {
-    return posts.map((post) => (
-      <View key={post.id} style={styles.postContainer}>
-        <View style={styles.profileImageContainer}>
-          <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
-          <Text style={styles.username}>{post.username}</Text>
-        </View>
-        <Image style={styles.postImage} source={post.image} />
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
-            <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleChat(post.id)} style={styles.buttonContainer}>
-            <Image style={styles.buttonImage} source={require('../assets/home_chat.png')} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDirect(post.id)} style={styles.buttonContainer}>
-            <Image style={styles.buttonImage} source={require('../assets/home_direct.png')} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSave(post.id)} style={[styles.buttonContainer, styles.lastButton]}>
-            <Image style={styles.buttonImage} source={require('../assets/home_save.png')} />
-          </TouchableOpacity>
-        </View>
+  const renderPosts = ({ item: post }) => (
+    <View key={post.id} style={styles.postContainer}>
+      <View style={styles.profileImageContainer}>
+        <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
+        <Text style={styles.username}>{post.title}</Text>
+      </View>
+      <Image style={styles.postImage} source={{ uri: post.image_url }} />
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
+          <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleChat(post.id)} style={styles.buttonContainer}>
+          <Image style={styles.buttonImage} source={require('../assets/home_chat.png')} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleDirect(post.id)} style={styles.buttonContainer}>
+          <Image style={styles.buttonImage} source={require('../assets/home_direct.png')} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleSave(post.id)} style={[styles.buttonContainer, styles.lastButton]}>
+          <Image style={styles.buttonImage} source={require('../assets/home_save.png')} />
+        </TouchableOpacity>
+      </View>
 
-        {comments[post.id] && (
-          <View style={styles.commentContainer}>
+      {comments[post.id] && comments[post.id].showComments && (
+        <View style={styles.commentContainer}>
+          {(comments[post.id].comments && comments[post.id].comments.length > 0) ? (
+            comments[post.id].comments.map((comment, index) => (
+              <View key={index} style={styles.commentItem}>
+                <Text>{comment.comment}</Text>
+                <TouchableOpacity onPress={() => handleDeleteComment(comment.id, post.id)} style={styles.deleteButton}>
+                  <Text style={styles.deleteButtonText}>삭제</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            <Text>댓글이 없습니다.</Text>
+          )}
+          <View style={styles.commentInputContainer}>
             <TextInput
               style={styles.commentInput}
               value={commentText}
@@ -82,19 +147,29 @@ export default function HomeScreen() {
               <Text style={styles.submitButtonText}>게시</Text>
             </TouchableOpacity>
           </View>
-        )}
-        <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
-        <Text style={styles.postText}>
-          <Text style={styles.username}>{post.username}</Text> {post.text}
-        </Text>
-      </View>
-    ));
-  };
+        </View>
+      )}
+
+      <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
+      <Text style={styles.postText}>
+        <Text style={styles.username}>{post.title}</Text> {post.content}
+      </Text>
+    </View>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      {renderPosts()}
-    </ScrollView>
+    <FlatList
+      contentContainerStyle={styles.scrollContainer}
+      data={posts}
+      renderItem={renderPosts}
+      keyExtractor={(item) => item.id.toString()}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      }
+    />
   );
 }
 
@@ -124,7 +199,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   postImage: {
-    width: '100%', // 전체 너비로 조정
+    width: '100%',
     height: 375,
     marginBottom: 10,
   },
@@ -148,25 +223,44 @@ const styles = StyleSheet.create({
   },
   commentContainer: {
     marginTop: 10,
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 5,
+  },
+  commentInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 10,
   },
   commentInput: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#CCCCCC',
-    borderRadius: 5,
+    borderRadius: 20,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    marginRight: 10,
   },
   submitButton: {
     backgroundColor: '#007AFF',
     paddingVertical: 8,
     paddingHorizontal: 15,
-    borderRadius: 5,
+    borderRadius: 20,
+    marginLeft: 10,
   },
   submitButtonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
+  },
+  commentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  deleteButton: {
+    marginLeft: 10,
+  },
+  deleteButtonText: {
+    color: 'red',
   },
 });

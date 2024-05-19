@@ -1,15 +1,23 @@
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, Image, StyleSheet, ScrollView } from 'react-native';
+import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AccountScreen() {
-  const images = [
-    require('../assets/image1.jpg'),
-    require('../assets/image2.jpg'),
-    require('../assets/image3.jpg'),
-    require('../assets/image4.jpg'),
-    require('../assets/image5.jpg'),
-  ];
+  const [images, setImages] = useState([]);
+
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  const fetchImages = async () => {
+    try {
+      const response = await axios.get('http://192.168.35.233:3000/api/getPost');
+      setImages(response.data);
+    } catch (error) {
+      console.error('Error loading images: ', error);
+    }
+  };
 
   const renderImageRows = () => {
     const imageRows = [];
@@ -19,8 +27,8 @@ export default function AccountScreen() {
       currentRow.push(
         <Image
           key={index}
-          style={styles.Image}
-          source={image}
+          style={styles.image}
+          source={{ uri: image.image_url }}
         />
       );
       if (currentRow.length === 3 || index === images.length - 1) {
@@ -41,7 +49,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <ScrollView style={[{ backgroundColor: '#FFFFFF' },{flex:1}]}>
+    <ScrollView style={[{ backgroundColor: '#FFFFFF' }, { flex: 1 }]}>
       <View style={styles.container}>
         <View style={styles.profileContainer}>
           <Image
@@ -65,16 +73,16 @@ export default function AccountScreen() {
           <Text style={styles.introText}>
             이름: Tom {"\n"}
             나이: 3살 {"\n"}
-            1년마다 무럭무럭 자르는 모습을 보여드리고 싶어요!
+            1년마다 무럭무럭 자라는 모습을 보여드리고 싶어요!
           </Text>
         </View>
       </View>
       <View style={styles.segment}>
-            <Ionicons name="grid-outline" size={25} color="black" />
-            <View style={styles.pictureContainer}>
-              {renderImageRows()}
-            </View>
-          </View>
+        <Ionicons name="grid-outline" size={25} color="black" />
+        <View style={styles.pictureContainer}>
+          {renderImageRows()}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -131,7 +139,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  Image: {
+  image: {
     width: '33%',
     height: 100,
   },
@@ -142,7 +150,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     marginRight: -5,
-    
   },
   pictureContainer: {
     width: '100%',
