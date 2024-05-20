@@ -12,6 +12,7 @@ import PostScreen from './Screens/PostScreen';
 import AccountScreen from './Screens/AccountScreen';
 import MapScreen from './Screens/MapScreen';
 import WalkScreen from './Screens/WalkScreen';
+import PostDetailScreen from './Screens/PostDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -54,7 +55,6 @@ function TabNavigator() {
           paddingBottom: 10,
         },
         tabBarItemStyle: { justifyContent: 'center',},
-        //tabBarActiveBackgroundColor: '#f2f2f2',
         headerStyle: { backgroundColor: '#d2b48c',},
         headerTintColor: '#ffffff',
         headerTitleStyle: {
@@ -77,7 +77,7 @@ function TabNavigator() {
 export default function App(){
   return(
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="Account">
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="WalkScreen" component={WalkScreen} options = {{
           title: '멍스타그램',
@@ -90,6 +90,7 @@ export default function App(){
             fontSize: 20,
           },headerTitleAlign: 'center'
           }}/>
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

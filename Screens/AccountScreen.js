@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Image, StyleSheet, ScrollView } from 'react-native';
+import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function AccountScreen() {
+export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);
 
   useEffect(() => {
@@ -12,11 +12,20 @@ export default function AccountScreen() {
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('http://192.168.35.233:3000/api/getPost');
+      const response = await axios.get('http://192.168.0.41:3000/api/getPost');
       setImages(response.data);
     } catch (error) {
       console.error('Error loading images: ', error);
     }
+  };
+
+  const handleImagePress = (image) => {
+    navigation.navigate('PostDetail', {
+      id: image.id,
+      title: image.title,
+      content: image.content,
+      image_url: image.image_url,
+    });
   };
 
   const renderImageRows = () => {
@@ -25,11 +34,12 @@ export default function AccountScreen() {
 
     images.forEach((image, index) => {
       currentRow.push(
-        <Image
-          key={index}
-          style={styles.image}
-          source={{ uri: image.image_url }}
-        />
+        <TouchableOpacity key={index} onPress={() => handleImagePress(image)} style={styles.touchable}>
+          <Image
+            style={styles.image}
+            source={{ uri: image.image_url }}
+          />
+        </TouchableOpacity>
       );
       if (currentRow.length === 3 || index === images.length - 1) {
         const remainingSpaces = 3 - currentRow.length;
@@ -139,9 +149,13 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  image: {
+  touchable: {
     width: '33%',
     height: 100,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   emptyImage: {
     flex: 1,
