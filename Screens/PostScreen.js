@@ -17,7 +17,7 @@ export default function App() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://192.168.0.41:3000/api/getPost');
+      const response = await axios.get('http://3.35.26.234:8080/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -64,6 +64,7 @@ export default function App() {
   };
 
   const handleAddPost = async () => {
+    const userId = 1; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       let imageUrl = null;
       if (imageURI) {
@@ -71,7 +72,7 @@ export default function App() {
         imageUrl = await uploadImage(imageURI, fileName);
       }
       try {
-        const response = await axios.post('http://192.168.0.41:3000/api/insert', {
+        const response = await axios.post(`http://3.35.26.234:8080/api/insert/${userId}`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
@@ -89,10 +90,11 @@ export default function App() {
       }
     }
   };
+  
 
   const handleDeletePost = async (id) => {
     try {
-      await axios.delete(`http://192.168.0.41:3000/api/deletePost/${id}`);
+      await axios.delete(`http://3.35.26.234:8080/api/deletePost/${id}`);
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
     } catch (error) {
@@ -109,7 +111,7 @@ export default function App() {
     }
 
     try {
-      await axios.put(`http://192.168.0.41:3000/api/updatePost/${id}`, {
+      await axios.put(`http://3.35.26.234:8080/api/updatePost/${id}`, {
         title: editingTitle,
         content: editingContent,
         imageUrl: imageUrl,
