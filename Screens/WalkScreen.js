@@ -3,6 +3,7 @@ import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
 
 export default function WalkScreen() {
   const [location, setLocation] = useState(null);
@@ -14,7 +15,28 @@ export default function WalkScreen() {
   const [calories, setCalories] = useState(0);
   const mapViewRef = useRef(null);
   const lastLocationRef = useRef(null);
-  const startTimeRef = useRef(null);
+
+  const [startWalking, setStartWalking] = useState(null);
+  const [endWalking, setEndWalking] = useState(null);
+
+  
+  // useEffect(() => {
+  //   console.log("startWalking:", startWalking);
+  // }, [startWalking]);
+
+  // useEffect(() => {
+  //   console.log("endWalking:", endWalking);
+  // }, [endWalking]);
+
+  // useEffect(() => {
+  //   console.log("-------------------------");
+  //   console.log("startWalking:", startWalking);
+  //   console.log("endWalking:", endWalking);
+  //   console.log("totalDistance:", totalDistance);
+  //   console.log("calories:", calories);
+  //   console.log("totalDistance/calories:", totalDistance / calories);
+  //   console.log("-------------------------");
+  // }, [startWalking, endWalking, totalDistance, calories]);
 
   useEffect(() => {
     (async () => {
@@ -84,9 +106,61 @@ export default function WalkScreen() {
     }
   }, [location]);
 
-  const handleStartStop = () => {
-    setIsRunning(prev => !prev);
+  const handleStartStop = async () => {
+    if (!isRunning) {
+      setStartWalking(new Date());
+    } else {
+      const endWalkingTime = new Date();
+      setEndWalking(endWalkingTime);
+  
+      if (startWalking && endWalkingTime) {
+        const startYear = startWalking.getFullYear().toString();
+        const startMonth = startWalking.getMonth() + 1;
+        const startDate = startWalking.getDate();
+        const startHour = startWalking.getHours();
+        const startMinute = startWalking.getMinutes();
+        const startSecond = startWalking.getSeconds();
+  
+        const DBStart = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDate).padStart(2, '0')}T${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:${String(startSecond).padStart(2, '0')}`;
+  
+        const endYear = endWalkingTime.getFullYear().toString();
+        const endMonth = endWalkingTime.getMonth() + 1;
+        const endDate = endWalkingTime.getDate();
+        const endHour = endWalkingTime.getHours();
+        const endMinute = endWalkingTime.getMinutes();
+        const endSecond = endWalkingTime.getSeconds();
+  
+        const DBEnd = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDate).padStart(2, '0')}T${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}:${String(endSecond).padStart(2, '0')}`;
+  
+        const walkDuration = (endWalkingTime - startWalking) / 1000; // Duration in seconds
+        const hours = Math.floor(walkDuration / 3600);
+        const minutes = Math.floor((walkDuration % 3600) / 60);
+        const seconds = Math.floor(walkDuration % 60);
+  
+        const totalWalkingTime = seconds + minutes * 60 + hours * 60 * 60;
+  
+        console.log(`산책 정보:\n\n시작 시간: ${DBStart}\n종료 시간: ${DBEnd}\n거리: ${totalDistance.toFixed(2)} meters\n칼로리: ${calories.toFixed(2)} kcal\n산책 시간 : ${hours}시간 ${minutes}분 ${seconds}초 \n    산책 시간 (초) : ${totalWalkingTime}`);
+  
+        try {
+          const userId = 1; // Replace with actual user id
+          await axios.post(`https://223.194.156.112:8080/walking/insert/${userId}`, {
+            walking_start: startWalking,
+            walking_end: endWalking,
+            walking_distance: totalDistance.toFixed(2),
+            walking_calorie: calories.toFixed(2),
+            walking_speed: totalDistance / totalWalkingTime,
+          });
+          console.log("Walk data saved successfully");
+        } catch (error) {
+          console.error("Error saving walk data:", error);
+        }
+      } else {
+        console.warn("시작 시간 또는 종료 시간이 없습니다.");
+      }
+    }
+    setIsRunning((prev) => !prev);
   };
+  
 
   const formatTime = (time) => {
     const hours = Math.floor(time / 3600);
@@ -122,6 +196,7 @@ export default function WalkScreen() {
   } else if (location) {
     text = JSON.stringify(location);
   }
+
 
   return (
     <View style={styles.container}>

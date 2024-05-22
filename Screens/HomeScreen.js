@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import axios from 'axios';
 
+
 const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function HomeScreen() {
