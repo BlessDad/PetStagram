@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -13,6 +12,7 @@ import PostScreen from './Screens/PostScreen';
 import AccountScreen from './Screens/AccountScreen';
 import MapScreen from './Screens/MapScreen';
 import WalkScreen from './Screens/WalkScreen';
+import PostDetailScreen from './Screens/PostDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -55,7 +55,6 @@ function TabNavigator() {
           paddingBottom: 10,
         },
         tabBarItemStyle: { justifyContent: 'center',},
-        //tabBarActiveBackgroundColor: '#f2f2f2',
         headerStyle: { backgroundColor: '#d2b48c',},
         headerTintColor: '#ffffff',
         headerTitleStyle: {
@@ -66,9 +65,9 @@ function TabNavigator() {
         title: '멍스타그램',
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{unmountOnBlur: true}} />
       <Tab.Screen name="Diary" component={DiaryScreen} />
-      <Tab.Screen name="Post" component={PostScreen} options = {{unmountOnBlur: true}} />
+      <Tab.Screen name="Post" component={PostScreen} options={{unmountOnBlur: true}} />
       <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="Account" component={AccountScreen} />
     </Tab.Navigator>
@@ -78,7 +77,7 @@ function TabNavigator() {
 export default function App(){
   return(
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="Account">
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="WalkScreen" component={WalkScreen} options = {{
           title: '멍스타그램',
@@ -91,6 +90,7 @@ export default function App(){
             fontSize: 20,
           },headerTitleAlign: 'center'
           }}/>
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

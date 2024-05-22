@@ -17,7 +17,7 @@ export default function App() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://192.168.0.25:8080/api/getPost');
+      const response = await axios.get('http://52.78.86.212:8080/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -36,15 +36,12 @@ export default function App() {
       quality: 1,
     });
   
-    console.log(result);
-  
     if (!result.cancelled && result.assets.length > 0 && result.assets[0].uri) {
       console.log("uri? " + result.assets[0].uri)
       setImageCallback(result.assets[0].uri);
       setImageURI(result.assets[0].uri);
     }
   };
-
   const uploadImage = async (uri, fileName) => {
     const formData = new FormData();
     formData.append('image', {
@@ -54,7 +51,7 @@ export default function App() {
     });
   
     try {
-      const response = await axios.post('http://192.168.0.25:8080/api/upload', formData, {
+      const response = await axios.post('http://52.78.86.212:8080/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -70,7 +67,9 @@ export default function App() {
     }
   };
 
+
   const handleAddPost = async () => {
+    const userId = 2; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       if (imageURI) {
         const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
@@ -78,17 +77,16 @@ export default function App() {
         console.log('Image URL:', imageURI); // 이미지 URL 로그 출력
       }
 
-      
-  
+
       try {
-        const response = await axios.post('http://192.168.0.25:8080/api/insert', {
+        const response = await axios.post(`http://52.78.86.212:8080/api/insert/${userId}`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
         });
-  
+        
         console.log('Server Response:', response.data); // 서버 응답 로그 출력
-  
+
         setTitle('');
         setContent('');
         setImageURI(null);
@@ -102,10 +100,11 @@ export default function App() {
       }
     }
   };
+  
 
   const handleDeletePost = async (id) => {
     try {
-      await axios.delete(`http://192.168.0.25:8080/api/deletePost/${id}`);
+      await axios.delete(`http://52.78.86.212:8080/api/deletePost/${id}`);
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
     } catch (error) {
@@ -116,28 +115,31 @@ export default function App() {
 
   const handleEditPost = async (id) => {
     let imageUrl = editingImageURI;
-    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image) {
-      imageUrl = await uploadImage(editingImageURI);
+    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image_url) {
+      const fileName = `${editingTitle.replace(/\s+/g, '_')}.jpg`; 
+      imageUrl = await uploadImage(editingImageURI, fileName);
     }
 
     try {
-      await axios.put(`http://192.168.0.25:8080/api/updatePost/${id}`, {
+      await axios.put(`http://52.78.86.212:8080/api/updatePost/${id}`, {
         title: editingTitle,
         content: editingContent,
-        image: imageUrl,
+        imageUrl: imageUrl,
       });
       fetchPosts();
       setIsEditing(null); // 수정 완료 후 상태 초기화
       Alert.alert('게시물 수정 성공', '게시물이 성공적으로 수정되었습니다.');
       setEditingTitle(''); // 수정 완료 후 입력 필드 초기화
-      setEditingContent(''); // 수정 완료 후 입력 필드 초기화
-      setEditingImageURI(null); // 수정 완료 후 입력 필드 초기화
+      setEditingContent(''); 
+      setEditingImageURI(null); 
+      setImageURI(null);
     } catch (error) {
       console.error('게시물 수정 실패:', error);
       Alert.alert('게시물 수정 실패', '게시물 수정 중 오류가 발생했습니다.');
     }
   };
 
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>게시글 목록</Text>
@@ -168,7 +170,7 @@ export default function App() {
             <Text>제목: {item.title}</Text>
             <Text>내용: {item.content}</Text>
             {item.imageUrl && (
-                  <Image source={{ uri: `http://192.168.0.25:8080${item.imageUrl}` }} style={styles.image} />
+                  <Image source={{ uri: `http://52.78.86.212:8080${item.imageUrl}` }} style={styles.image} />
                 )}
             <View style={styles.buttonContainer}>
               <Button title="수정" onPress={() => setIsEditing(item.id)} />
