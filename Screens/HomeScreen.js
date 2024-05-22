@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import axios from 'axios';
 
-const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://223.194.156.112:8080';
 
 export default function HomeScreen() {
     const [posts, setPosts] = useState([]);
