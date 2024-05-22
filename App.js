@@ -65,9 +65,9 @@ function TabNavigator() {
         title: '멍스타그램',
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options = {{unmountOnBlur: true}} />
       <Tab.Screen name="Diary" component={DiaryScreen} />
-      <Tab.Screen name="Post" component={PostScreen} />
+      <Tab.Screen name="Post" component={PostScreen} options = {{unmountOnBlur: true}} />
       <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="Account" component={AccountScreen} />
     </Tab.Navigator>

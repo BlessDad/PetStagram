@@ -17,7 +17,7 @@ export default function App() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://3.35.26.234:8080/api/getPost');
+      const response = await axios.get('http://52.78.86.212:8080/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -36,6 +36,9 @@ export default function App() {
       quality: 1,
     });
   
+    console.log(result);
+
+
     if (!result.cancelled && result.assets.length > 0 && result.assets[0].uri) {
       setImageCallback(result.assets[0].uri);
       setImageURI(result.assets[0].uri);
@@ -46,33 +49,39 @@ export default function App() {
     const formData = new FormData();
     formData.append('image', {
       uri,
-      type: 'image/jpeg', // 이미지 타입
-      name: fileName, // 이미지 이름
+      type: 'image/jpeg', // 이미지 타입 (필요에 따라 수정)
+      name: fileName, // 이미지 이름 (필요에 따라 수정)
     });
   
     try {
-      const response = await axios.post('http://192.168.0.41:3000/api/upload', formData, {
+      const response = await axios.post('http://52.78.86.212:8080/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data.imageUrl; // 서버 응답에서 이미지 URL을 반환
+      console.log('Uploaded Image Uri: ' + response.data); // 서버 응답 로그 출력
+      // console.log('Uploaded Image URL:', response.assests[0].imageUrl); // 서버 응답 로그 출력
+      console.log(uri);
+      return response.data;
+      
     } catch (error) {
       console.error('Image upload failed: ', error);
       return null;
     }
   };
 
+
   const handleAddPost = async () => {
-    const userId = 1; // 가정한 사용자 ID
+    const userId = 2; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
-      let imageUrl = null;
       if (imageURI) {
         const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
         imageUrl = await uploadImage(imageURI, fileName);
+        console.log('Image URL:', imageURI); // 이미지 URL 로그 출력
       }
+
       try {
-        const response = await axios.post(`http://3.35.26.234:8080/api/insert/${userId}`, {
+        const response = await axios.post(`http://52.78.86.212:8080/api/insert/${userId}`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
@@ -94,7 +103,7 @@ export default function App() {
 
   const handleDeletePost = async (id) => {
     try {
-      await axios.delete(`http://3.35.26.234:8080/api/deletePost/${id}`);
+      await axios.delete(`http://52.78.86.212:8080/api/deletePost/${id}`);
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
     } catch (error) {
@@ -111,7 +120,7 @@ export default function App() {
     }
 
     try {
-      await axios.put(`http://3.35.26.234:8080/api/updatePost/${id}`, {
+      await axios.put(`http://52.78.86.212:8080/api/updatePost/${id}`, {
         title: editingTitle,
         content: editingContent,
         imageUrl: imageUrl,
@@ -139,12 +148,12 @@ export default function App() {
             {isEditing == item.id ? (
               <View>
                 <TextInput
-                  style={styles.input}
-                  value={editingTitle}
-                  onChangeText={setEditingTitle}
-                  placeholder="사용자를 입력하세요"
+                style = {styles.input}
+                value = {editingTitle}
+                onChangeText = {setEditingTitle}
+                placeholder = "제목을 입력하세요"
                 />
-                <TextInput
+                 <TextInput
                   style={styles.input}
                   value={editingContent}
                   onChangeText={setEditingContent}
@@ -152,33 +161,22 @@ export default function App() {
                   multiline={true}
                   numberOfLines={4}
                 />
-                <TouchableOpacity onPress={() => pickImage(setEditingImageURI)}>
-                  {editingImageURI ? (
-                    <Image source={{ uri: editingImageURI }} style={styles.image} />
-                  ) : (
-                    <View style={styles.imagePlaceholder}>
-                      <MaterialIcons name="add-a-photo" size={50} color="gray" />
-                    </View>
-                  )}
-                </TouchableOpacity>
                 <Button title="수정 완료" onPress={() => handleEditPost(item.id)} />
-              </View>
+                </View>
             ) : (
               <View>
-                <Text>사용자: {item.title}</Text>
-                <Text>내용: {item.content}</Text>
-                {item.image_url && (
-                  <View>
-                    <Image source={{ uri: item.image_url }} style={styles.image} />
-                  </View>
+            <Text>제목: {item.title}</Text>
+            <Text>내용: {item.content}</Text>
+            {item.imageUrl && (
+                  <Image source={{ uri: `http://52.78.86.212:8080${item.imageUrl}` }} style={styles.image} />
                 )}
-                <View style={styles.buttonContainer}>
-                  <Button title="수정" onPress={() => setIsEditing(item.id)} />
-                  <Button title="삭제" onPress={() => handleDeletePost(item.id)} />
-                </View>
-              </View>
-            )}
+            <View style={styles.buttonContainer}>
+              <Button title="수정" onPress={() => setIsEditing(item.id)} />
+              <Button title="삭제" onPress={() => handleDeletePost(item.id)} />
+            </View>
           </View>
+        )}
+        </View>
         )}
         keyExtractor={(item) => item.id.toString()}
       />
@@ -188,7 +186,7 @@ export default function App() {
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="사용자를 입력하세요"
+            placeholder="제목을 입력하세요"
           />
           <TextInput
             style={styles.input}

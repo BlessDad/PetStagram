@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import axios from 'axios';
 
-const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function HomeScreen() {
     const [posts, setPosts] = useState([]);
@@ -121,7 +121,7 @@ export default function HomeScreen() {
                 <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
                 <Text style={styles.username}>{post.title}</Text>
             </View>
-            <Image style={styles.postImage} source={{ uri: post.image_url }} />
+            <Image style={styles.postImage} source={{ uri: `http://52.78.86.212:8080${post.imageUrl}` }} />
             <View style={styles.buttonsContainer}>
                 <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
                     <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
