@@ -162,6 +162,9 @@ export default function WalkScreen() {
             <Icon name="play" size={30} color="#fff" />
           )}
         </TouchableOpacity>
+        <TouchableOpacity style={styles.startButton}>
+          <Icon name="stop" size={30} color="#fff" />
+        </TouchableOpacity>
       </View>
 
     </View>
@@ -197,6 +200,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
+    flexDirection: 'row', 
+    gap: 120,
   },
   bigText: {
     fontSize: 36,

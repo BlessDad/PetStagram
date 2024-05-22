@@ -15,7 +15,7 @@ export default function HomeScreen() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://192.168.0.41:3000/api/getPost');
+      const response = await axios.get('http://223.194.136.236:3000/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -30,7 +30,7 @@ export default function HomeScreen() {
 
   const fetchComments = async (postId) => {
     try {
-      const response = await axios.get(`http://192.168.0.41:3000/api/getComments/${postId}`);
+      const response = await axios.get(`http://223.194.136.236:3000/api/getComments/${postId}`);
       setComments((prevComments) => ({
         ...prevComments,
         [postId]: { showComments: true, comments: response.data }
@@ -68,7 +68,7 @@ export default function HomeScreen() {
   const handleCommentSubmit = async (postId) => {
     if (commentText.trim() !== '') {
       try {
-        await axios.post('http://192.168.0.41:3000/api/addComment', {
+        await axios.post('http://223.194.136.236:3000/api/addComment', {
           postId,
           comment: commentText,
         });
@@ -83,7 +83,7 @@ export default function HomeScreen() {
 
   const handleDeleteComment = async (commentId, postId) => {
     try {
-      await axios.delete(`http://192.168.0.41:3000/api/deleteComment/${commentId}`);
+      await axios.delete(`http://223.194.136.236:3000/api/deleteComment/${commentId}`);
       await fetchComments(postId);
     } catch (error) {
       console.error('댓글 삭제 실패:', error);
