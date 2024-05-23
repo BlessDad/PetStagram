@@ -19,24 +19,6 @@ export default function WalkScreen() {
   const [startWalking, setStartWalking] = useState(null);
   const [endWalking, setEndWalking] = useState(null);
 
-  
-  // useEffect(() => {
-  //   console.log("startWalking:", startWalking);
-  // }, [startWalking]);
-
-  // useEffect(() => {
-  //   console.log("endWalking:", endWalking);
-  // }, [endWalking]);
-
-  // useEffect(() => {
-  //   console.log("-------------------------");
-  //   console.log("startWalking:", startWalking);
-  //   console.log("endWalking:", endWalking);
-  //   console.log("totalDistance:", totalDistance);
-  //   console.log("calories:", calories);
-  //   console.log("totalDistance/calories:", totalDistance / calories);
-  //   console.log("-------------------------");
-  // }, [startWalking, endWalking, totalDistance, calories]);
 
   useEffect(() => {
     (async () => {
@@ -109,7 +91,8 @@ export default function WalkScreen() {
   const handleStartStop = async () => {
     if (!isRunning) {
       setStartWalking(new Date());
-    } else {
+    } 
+    else {
       const endWalkingTime = new Date();
       setEndWalking(endWalkingTime);
   
@@ -122,7 +105,8 @@ export default function WalkScreen() {
         const startSecond = startWalking.getSeconds();
   
         const DBStart = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDate).padStart(2, '0')}T${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:${String(startSecond).padStart(2, '0')}`;
-  
+        //const DBStart = startWalking.toISOString();
+
         const endYear = endWalkingTime.getFullYear().toString();
         const endMonth = endWalkingTime.getMonth() + 1;
         const endDate = endWalkingTime.getDate();
@@ -132,6 +116,8 @@ export default function WalkScreen() {
   
         const DBEnd = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDate).padStart(2, '0')}T${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}:${String(endSecond).padStart(2, '0')}`;
   
+        //const DBEnd = endWalking.toISOString();
+
         const walkDuration = (endWalkingTime - startWalking) / 1000; // Duration in seconds
         const hours = Math.floor(walkDuration / 3600);
         const minutes = Math.floor((walkDuration % 3600) / 60);
@@ -142,19 +128,30 @@ export default function WalkScreen() {
         console.log(`산책 정보:\n\n시작 시간: ${DBStart}\n종료 시간: ${DBEnd}\n거리: ${totalDistance.toFixed(2)} meters\n칼로리: ${calories.toFixed(2)} kcal\n산책 시간 : ${hours}시간 ${minutes}분 ${seconds}초 \n    산책 시간 (초) : ${totalWalkingTime}`);
   
         try {
-          const userId = 1; // Replace with actual user id
-          await axios.post(`https://223.194.156.112:8080/walking/insert/${userId}`, {
-            walking_start: startWalking,
-            walking_end: endWalking,
-            walking_distance: totalDistance.toFixed(2),
-            walking_calorie: calories.toFixed(2),
-            walking_speed: totalDistance / totalWalkingTime,
-          });
+          const userId = 2; // Replace with actual user id
+          await axios.post(`http://52.78.86.212:8080/walking/insert/${userId}`, {
+            walking_start: DBStart,
+            walking_end: DBEnd,
+            walking_distance: parseFloat(totalDistance.toFixed(2)),
+            walking_calorie: parseInt(calories.toFixed(2)),
+            walking_speed: parseFloat(totalDistance / totalWalkingTime),
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json', // Content-Type 헤더를 JSON으로 설정
+            },
+          }
+          );
           console.log("Walk data saved successfully");
         } catch (error) {
-          console.error("Error saving walk data:", error);
+          if (error.response) {
+            console.error('Error adding walking: ', error); // 서버 응답이 있는 경우
+          } else {
+            console.error('Error adding walking: ', error); // 서버 응답이 없는 경우
+          }
         }
-      } else {
+      } 
+      else {
         console.warn("시작 시간 또는 종료 시간이 없습니다.");
       }
     }
