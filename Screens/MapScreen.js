@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 
@@ -10,6 +10,7 @@ export default function MapScreen() {
   const [currentRegion, setCurrentRegion] = useState(null);
   const [favoritedPlaces, setFavoritedPlaces] = useState([]);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // 현재 위치 정보 나타내기
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function MapScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
+      setLoading(false);
     })();
   }, []);
 
@@ -49,24 +51,6 @@ export default function MapScreen() {
       console.error('Error adding to favorites:', error);
     }
   };
-
-  // 즐겨찾기 목록 렌더링
-  const FavoritedPlaces = ({ favoritedPlaces }) => (
-    <FlatList
-      data={favoritedPlaces}
-      renderItem={({ item }) => (
-        <View style={styles.listItemStyle}>
-          <Text>{item.name}</Text>
-          <Text>{item.formatted_address}</Text>
-        </View>
-      )}
-      keyExtractor={item => item.place_id}
-      style={styles.resultListContainer}
-      ItemSeparatorComponent={() => (
-        <View style={styles.lineContainer} />
-      )}
-    />
-  );
 
   // 즐겨찾기 목록 표시 여부를 토글하는 함수
   const toggleFavorites = () => {
@@ -191,6 +175,11 @@ export default function MapScreen() {
       width: 30,
       height: 30,
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   }
 
   // 장소를 검색하고 검색 결과를 업데이트
@@ -206,6 +195,15 @@ export default function MapScreen() {
       console.error('Error searching for places:', error);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>현재 위치를 가져오는 중...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.mapContainer}>
@@ -300,7 +298,8 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
           )}
-          keyExtractor={item => item.place_id}
+          //keyExtractor={item => item.place_id}
+          keyExtractor={(item, index) => index.toString()}
           style={styles.favoritesresultListContainer}
           ItemSeparatorComponent={() => (
             <View style={styles.lineContainer} />

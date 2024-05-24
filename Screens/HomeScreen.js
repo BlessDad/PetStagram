@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, FlatList, RefreshControl } from 'react-native';
+import { Text, View, Image, StyleSheet, TouchableOpacity, TextInput, Alert, FlatList, RefreshControl, Button } from 'react-native';
 import axios from 'axios';
+import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function HomeScreen() {
   const [posts, setPosts] = useState([]);
@@ -8,6 +10,10 @@ export default function HomeScreen() {
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [isEditing, setIsEditing] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [editingContent, setEditingContent] = useState('');
+  const [editingImageURI, setEditingImageURI] = useState(null);
 
   useEffect(() => {
     fetchPosts();
@@ -15,7 +21,7 @@ export default function HomeScreen() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://223.194.136.236:3000/api/getPost');
+      const response = await axios.get('http://192.168.35.244:3000/api/getPost');
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -28,9 +34,80 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const pickImage = async (setImageCallback) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.cancelled && result.assets.length > 0 && result.assets[0].uri) {
+      setImageCallback(result.assets[0].uri);
+      setEditingImageURI(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri, fileName) => {
+    const formData = new FormData();
+    formData.append('image', {
+      uri,
+      type: 'image/jpeg',
+      name: fileName,
+    });
+
+    try {
+      const response = await axios.post('http://192.168.35.244:3000/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data.imageUrl;
+    } catch (error) {
+      console.error('Image upload failed: ', error);
+      return null;
+    }
+  };
+
+  const handleEditPost = async (id) => {
+    let imageUrl = editingImageURI;
+    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image_url) {
+      const fileName = `${editingTitle.replace(/\s+/g, '_')}.jpg`;
+      imageUrl = await uploadImage(editingImageURI, fileName);
+    }
+
+    try {
+      await axios.put(`http://192.168.35.244:3000/api/updatePost/${id}`, {
+        title: editingTitle,
+        content: editingContent,
+        imageUrl: imageUrl,
+      });
+      fetchPosts();
+      setIsEditing(null);
+      Alert.alert('게시물 수정 성공', '게시물이 성공적으로 수정되었습니다.');
+      setEditingTitle('');
+      setEditingContent('');
+      setEditingImageURI(null);
+    } catch (error) {
+      console.error('게시물 수정 실패:', error);
+      Alert.alert('게시물 수정 실패', '게시물 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleDeletePost = async (id) => {
+    try {
+      await axios.delete(`http://192.168.35.244:3000/api/deletePost/${id}`);
+      fetchPosts();
+      Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
+    } catch (error) {
+      console.error('게시물 삭제 실패:', error);
+      Alert.alert('게시물 삭제 실패', '게시물 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const fetchComments = async (postId) => {
     try {
-      const response = await axios.get(`http://223.194.136.236:3000/api/getComments/${postId}`);
+      const response = await axios.get(`http://192.168.35.244:3000/api/getComments/${postId}`);
       setComments((prevComments) => ({
         ...prevComments,
         [postId]: { showComments: true, comments: response.data }
@@ -68,7 +145,7 @@ export default function HomeScreen() {
   const handleCommentSubmit = async (postId) => {
     if (commentText.trim() !== '') {
       try {
-        await axios.post('http://223.194.136.236:3000/api/addComment', {
+        await axios.post('http://192.168.35.244:3000/api/addComment', {
           postId,
           comment: commentText,
         });
@@ -83,7 +160,7 @@ export default function HomeScreen() {
 
   const handleDeleteComment = async (commentId, postId) => {
     try {
-      await axios.delete(`http://223.194.136.236:3000/api/deleteComment/${commentId}`);
+      await axios.delete(`http://192.168.35.244:3000/api/deleteComment/${commentId}`);
       await fetchComments(postId);
     } catch (error) {
       console.error('댓글 삭제 실패:', error);
@@ -101,9 +178,20 @@ export default function HomeScreen() {
 
   const renderPosts = ({ item: post }) => (
     <View key={post.id} style={styles.postContainer}>
-      <View style={styles.profileImageContainer}>
-        <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
-        <Text style={styles.username}>{post.title}</Text>
+      <View style={styles.profileRow}>
+        <View style={styles.profileImageContainer}>
+          <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
+          <Text style={styles.username}>{post.title}</Text>
+        </View>
+        <View style={styles.buttonRow}>
+          <Button title="수정" onPress={() => {
+            setIsEditing(post.id);
+            setEditingTitle(post.title);
+            setEditingContent(post.content);
+            setEditingImageURI(post.image_url);
+          }} />
+          <Button title="삭제" onPress={() => handleDeletePost(post.id)} />
+        </View>
       </View>
       <Image style={styles.postImage} source={{ uri: post.image_url }} />
       <View style={styles.buttonsContainer}>
@@ -120,6 +208,42 @@ export default function HomeScreen() {
           <Image style={styles.buttonImage} source={require('../assets/home_save.png')} />
         </TouchableOpacity>
       </View>
+
+      {isEditing === post.id ? (
+        <View>
+          <TextInput
+            style={styles.input}
+            value={editingTitle}
+            onChangeText={setEditingTitle}
+            placeholder="사용자를 입력하세요"
+          />
+          <TextInput
+            style={styles.input}
+            value={editingContent}
+            onChangeText={setEditingContent}
+            placeholder="내용을 입력하세요"
+            multiline={true}
+            numberOfLines={4}
+          />
+          <TouchableOpacity onPress={() => pickImage(setEditingImageURI)}>
+            {editingImageURI ? (
+              <Image source={{ uri: editingImageURI }} style={styles.image} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <MaterialIcons name="add-a-photo" size={50} color="gray" />
+              </View>
+            )}
+          </TouchableOpacity>
+          <Button title="수정 완료" onPress={() => handleEditPost(post.id)} />
+        </View>
+      ) : (
+        <View>
+          <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
+          <Text style={styles.postText}>
+            <Text style={styles.username}>{post.title}</Text> {post.content}
+          </Text>
+        </View>
+      )}
 
       {comments[post.id] && comments[post.id].showComments && (
         <View style={styles.commentContainer}>
@@ -149,11 +273,6 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
-
-      <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
-      <Text style={styles.postText}>
-        <Text style={styles.username}>{post.title}</Text> {post.content}
-      </Text>
     </View>
   );
 
@@ -182,10 +301,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#CCCCCC',
   },
+  profileRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   profileImageContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
   profileImage: {
     width: 30,
@@ -196,7 +320,6 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
   },
   postImage: {
     width: '100%',
@@ -262,5 +385,38 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: 'red',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  imagePlaceholder: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'gray',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  postText: {
+    fontSize: 14,
+    marginBottom: 10,
   },
 });

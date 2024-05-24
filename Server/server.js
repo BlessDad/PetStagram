@@ -51,7 +51,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
-  const imageUrl = `http://223.194.136.236:${port}/uploads/${req.file.filename}`;
+  const imageUrl = `http://192.168.35.244:${port}/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });
 
@@ -119,7 +119,7 @@ app.delete('/api/deletePost/:id', (req, res) => {
 app.put("/api/updatePost/:id", upload.single('image'), (req, res) => {
   const postId = req.params.id;
   const { title, content } = req.body;
-  const imageUrl = req.file ? `http://223.194.136.236:${port}/uploads/${req.file.filename}` : req.body.imageUrl;
+  const imageUrl = req.file ? `http://192.168.35.244:${port}/uploads/${req.file.filename}` : req.body.imageUrl;
 
   if (!title || !content) {
     return res.status(400).json({ error: '제목과 내용을 모두 입력해야 합니다.' });

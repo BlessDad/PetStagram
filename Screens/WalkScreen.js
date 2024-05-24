@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -12,21 +12,23 @@ export default function WalkScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [totalDistance, setTotalDistance] = useState(0); // 누적 거리
   const [calories, setCalories] = useState(0);
+  const [loading, setLoading] = useState(true); // 로딩 상태 추가
   const mapViewRef = useRef(null);
   const lastLocationRef = useRef(null);
-  const startTimeRef = useRef(null);
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('Permission to access location was denied');
+        setLoading(false); // 권한 거부 시 로딩 상태 해제
         return;
       }
 
       let initialLocation = await Location.getCurrentPositionAsync({});
       setLocation(initialLocation);
       lastLocationRef.current = initialLocation;
+      setLoading(false); // 위치 가져온 후 로딩 상태 해제
 
       Location.watchPositionAsync({ distanceInterval: 1 }, (newLocation) => {
         if (isRunning) {
@@ -50,15 +52,14 @@ export default function WalkScreen() {
           // 누적 거리 갱신
           setTotalDistance(prevDistance => prevDistance + newDistance);
 
-          // 평균 페이스, 칼로리 계산 및 설정
-          distance = totalDistance + newDistance
-          const newCalories = calculateCalories(distance);
+          // 칼로리 계산 및 설정
+          const newCalories = calculateCalories(totalDistance + newDistance);
           setCalories(newCalories);
           lastLocationRef.current = newLocation;
         }
       });
     })();
-  }, [isRunning, totalDistance]);
+  }, [isRunning]);
 
   useEffect(() => {
     let intervalId;
@@ -72,17 +73,6 @@ export default function WalkScreen() {
 
     return () => clearInterval(intervalId);
   }, [isRunning]);
-
-  useEffect(() => {
-    if (location && mapViewRef.current) {
-      mapViewRef.current.animateToRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-    }
-  }, [location]);
 
   const handleStartStop = () => {
     setIsRunning(prev => !prev);
@@ -116,11 +106,13 @@ export default function WalkScreen() {
     return distance * caloriesBurnedPerMeter;
   };
 
-  let text = 'Waiting...';
-  if (errorMsg) {
-    text = errorMsg;
-  } else if (location) {
-    text = JSON.stringify(location);
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>현재 위치를 가져오는 중...</Text>
+      </View>
+    );
   }
 
   return (
@@ -129,11 +121,11 @@ export default function WalkScreen() {
         <MapView
           ref={mapViewRef}
           style={{ flex: 1 }}
-          initialRegion={{
-            latitude: location ? location.coords.latitude : 37.78825,
-            longitude: location ? location.coords.longitude : -122.4324,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
+          region={{
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
           }}
         >
           {location && <Marker coordinate={location.coords} title="Current Location" />}
@@ -166,7 +158,6 @@ export default function WalkScreen() {
           <Icon name="stop" size={30} color="#fff" />
         </TouchableOpacity>
       </View>
-
     </View>
   );
 }
@@ -221,6 +212,11 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     paddingHorizontal: 20,
     paddingVertical: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

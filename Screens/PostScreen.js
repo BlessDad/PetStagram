@@ -1,32 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, Image, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
 import axios from 'axios';
 import FormData from 'form-data';
 import * as ImagePicker from 'expo-image-picker';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 export default function App() {
-  const [posts, setPosts] = useState([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [imageURI, setImageURI] = useState(null);
-  const [isEditing, setIsEditing] = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
-  const [editingContent, setEditingContent] = useState('');
-  const [editingImageURI, setEditingImageURI] = useState(null);
-
-  const fetchPosts = async () => {
-    try {
-      const response = await axios.get('http://223.194.136.236:3000/api/getPost');
-      setPosts(response.data);
-    } catch (error) {
-      console.error("Error loading posts: ", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
 
   const pickImage = async (setImageCallback) => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -51,7 +35,7 @@ export default function App() {
     });
   
     try {
-      const response = await axios.post('http://223.194.136.236:3000/api/upload', formData, {
+      const response = await axios.post('http://192.168.35.244:3000/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -71,7 +55,7 @@ export default function App() {
         imageUrl = await uploadImage(imageURI, fileName);
       }
       try {
-        const response = await axios.post('http://223.194.136.236:3000/api/insert', {
+        await axios.post('http://192.168.35.244:3000/api/insert', {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
@@ -79,7 +63,7 @@ export default function App() {
         setTitle('');
         setContent('');
         setImageURI(null);
-        fetchPosts();
+        Alert.alert('게시물 추가 성공', '게시물이 성공적으로 추가되었습니다.');
       } catch (error) {
         if (error.response) {
           console.error('Error adding post: ', error.response.data); // 서버 응답이 있는 경우
@@ -90,124 +74,60 @@ export default function App() {
     }
   };
 
-  const handleDeletePost = async (id) => {
-    try {
-      await axios.delete(`http://223.194.136.236:3000/api/deletePost/${id}`);
-      fetchPosts();
-      Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
-    } catch (error) {
-      console.error('게시물 삭제 실패:', error);
-      Alert.alert('게시물 삭제 실패', '게시물 삭제 중 오류가 발생했습니다.');
-    }
-  };
-
-  const handleEditPost = async (id) => {
-    let imageUrl = editingImageURI;
-    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image_url) {
-      const fileName = `${editingTitle.replace(/\s+/g, '_')}.jpg`; 
-      imageUrl = await uploadImage(editingImageURI, fileName);
-    }
-
-    try {
-      await axios.put(`http://223.194.136.236:3000/api/updatePost/${id}`, {
-        title: editingTitle,
-        content: editingContent,
-        imageUrl: imageUrl,
-      });
-      fetchPosts();
-      setIsEditing(null); // 수정 완료 후 상태 초기화
-      Alert.alert('게시물 수정 성공', '게시물이 성공적으로 수정되었습니다.');
-      setEditingTitle(''); // 수정 완료 후 입력 필드 초기화
-      setEditingContent(''); 
-      setEditingImageURI(null); 
-      setImageURI(null);
-    } catch (error) {
-      console.error('게시물 수정 실패:', error);
-      Alert.alert('게시물 수정 실패', '게시물 수정 중 오류가 발생했습니다.');
-    }
-  };
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>게시글 목록</Text>
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => (
-          <View style={styles.postItem}>
-            {isEditing == item.id ? (
-              <View>
-                <TextInput
-                  style={styles.input}
-                  value={editingTitle}
-                  onChangeText={setEditingTitle}
-                  placeholder="사용자를 입력하세요"
-                />
-                <TextInput
-                  style={styles.input}
-                  value={editingContent}
-                  onChangeText={setEditingContent}
-                  placeholder="내용을 입력하세요"
-                  multiline={true}
-                  numberOfLines={4}
-                />
-                <TouchableOpacity onPress={() => pickImage(setEditingImageURI)}>
-                  {editingImageURI ? (
-                    <Image source={{ uri: editingImageURI }} style={styles.image} />
-                  ) : (
-                    <View style={styles.imagePlaceholder}>
-                      <MaterialIcons name="add-a-photo" size={50} color="gray" />
-                    </View>
-                  )}
-                </TouchableOpacity>
-                <Button title="수정 완료" onPress={() => handleEditPost(item.id)} />
-              </View>
-            ) : (
-              <View>
-                <Text>사용자: {item.title}</Text>
-                <Text>내용: {item.content}</Text>
-                {item.image_url && (
-                  <View>
-                    <Image source={{ uri: item.image_url }} style={styles.image} />
-                  </View>
-                )}
-                <View style={styles.buttonContainer}>
-                  <Button title="수정" onPress={() => setIsEditing(item.id)} />
-                  <Button title="삭제" onPress={() => handleDeletePost(item.id)} />
-                </View>
-              </View>
-            )}
+      <Text style={styles.title}>새 게시글</Text>
+      <TouchableOpacity onPress={() => pickImage(setImageURI)}>
+        {imageURI ? (
+          <Image source={{ uri: imageURI }} style={styles.image} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <MaterialIcons name="add-a-photo" size={50} color="gray" />
           </View>
         )}
-        keyExtractor={(item) => item.id.toString()}
-      />
-      {isEditing === null && (
-        <View>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="사용자를 입력하세요"
-          />
-          <TextInput
-            style={styles.input}
-            value={content}
-            onChangeText={setContent}
-            placeholder="내용을 입력하세요"
-            multiline={true}
-            numberOfLines={4}
-          />
-          <TouchableOpacity onPress={() => pickImage(setImageURI)}>
-            {imageURI ? (
-              <Image source={{ uri: imageURI }} style={styles.image} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <MaterialIcons name="add-a-photo" size={50} color="gray" />
-              </View>
-            )}
-          </TouchableOpacity>
+      </TouchableOpacity>
+      <View style={styles.inputContainer}>
+        <Ionicons name="person" size={24} />
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="사용자를 입력하세요"
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="book" size={24} />
+        <TextInput
+          style={styles.input}
+          value={content}
+          onChangeText={setContent}
+          placeholder="내용을 입력하세요"
+          multiline={true}
+          numberOfLines={4}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="paw" size={24} />
+        <TextInput
+          style={styles.input}
+          placeholder="#견종"
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="happy" size={24} />
+        <TextInput
+          style={styles.input}
+          placeholder="#감정"
+        />
+      </View>
+      <View style={styles.buttonWrapper}>
+        <View style={styles.buttonContainer}>
+          <Button title="분석하기" onPress={() => Alert.alert('분석하기 버튼 눌림')} />
+        </View>
+        <View style={styles.buttonContainer}>
           <Button title="추가하기" onPress={handleAddPost} />
         </View>
-      )}
+      </View>
     </View>
   );
 }
@@ -215,49 +135,55 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 15,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 5,
+    textAlign: 'center',
   },
-  postItem: {
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-  },
-  buttonContainer: {
+  inputContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 10,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'lightgray',
+    marginBottom: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    flex: 1,
+    fontSize: 15,
   },
   imagePlaceholder: {
-    width: 200,
-    height: 200,
+    width: width * 0.70,
+    height: width * 0.70,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'gray',
-    marginTop: 10,
+    marginTop: 5,
     marginBottom: 10,
+    alignSelf: 'center',
   },
   image: {
-    width: 200,
-    height: 200,
+    width: width * 0.70,
+    height: width * 0.70,
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10,
+    alignSelf: 'center',
+  },
+  buttonWrapper: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  buttonContainer: {
     marginBottom: 10,
   },
 });

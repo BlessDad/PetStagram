@@ -12,7 +12,7 @@ export default function AccountScreen({ navigation }) {
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('http://223.194.136.236:3000/api/getPost');
+      const response = await axios.get('http://192.168.35.244:3000/api/getPost');
       setImages(response.data);
     } catch (error) {
       console.error('Error loading images: ', error);
