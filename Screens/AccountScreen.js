@@ -6,16 +6,43 @@ import { Ionicons } from '@expo/vector-icons';
 export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);
 
+  const [userData, setUserData] = useState({
+    user_nickname: '',
+    pet_name: '',
+    pet_age: 0,
+    user_introduce: '',
+    user_follower_count: 0,
+    user_following_count: 0,
+    user_post_count: 0,
+  });
+
   useEffect(() => {
     fetchImages();
+    fetchUserData();
   }, []);
+
+  useEffect(() => {
+    console.log('회원 데이터 로드 성공');
+    console.log(userData);
+  }, [userData]);
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('http://52.78.86.212:8080/api/getPost');
+      const response = await axios.get('http://172.30.1.54:8080/api/getPost');
       setImages(response.data);
     } catch (error) {
       console.error('Error loading images: ', error);
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const userId = 3; // 임의로 설정한 userId
+      const response = await axios.get(`http://172.30.1.54:8080/user/getUser/${userId}`);
+      const user = response.data[0]; // 첫 번째 요소를 사용
+      setUserData(user);
+    } catch (error) {
+      console.error('Error loading user data: ', error);
     }
   };
 
@@ -68,9 +95,9 @@ export default function AccountScreen({ navigation }) {
           />
           <View style={styles.userInfo}>
             <View style={styles.statsContainer}>
-              <Text style={styles.stats}>4</Text>
-              <Text style={styles.stats}>100</Text>
-              <Text style={styles.stats}>50</Text>
+              <Text style={styles.stats}>{userData.user_post_count}</Text>
+              <Text style={styles.stats}>{userData.user_follower_count}</Text>
+              <Text style={styles.stats}>{userData.user_following_count}</Text>
             </View>
             <View style={styles.stats2Container}>
               <Text style={styles.stats2}>게시물</Text>
@@ -81,9 +108,9 @@ export default function AccountScreen({ navigation }) {
         </View>
         <View style={styles.introContainer}>
           <Text style={styles.introText}>
-            이름: Tom {"\n"}
-            나이: 3살 {"\n"}
-            1년마다 무럭무럭 자라는 모습을 보여드리고 싶어요!
+            이름: {userData.pet_name} {"\n"}
+            나이: {userData.pet_age}살 {"\n"}
+            소개: {userData.user_introduce}
           </Text>
         </View>
       </View>
@@ -99,75 +126,70 @@ export default function AccountScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    padding: 20,
+    padding: 16,
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
   profileImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginRight: 20,
+    marginRight: 16,
   },
   userInfo: {
-    flexDirection: 'column',
+    flex: 1,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '80%',
-    marginTop: -30,
   },
   stats: {
-    fontSize: 20,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   stats2Container: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '80%',
-    marginTop: 0,
+    marginTop: 4,
   },
   stats2: {
-    fontSize: 14,
+    fontSize: 12,
+    color: 'gray',
   },
   introContainer: {
-    width: '100%',
-    marginTop: 10,
+    marginBottom: 16,
   },
   introText: {
-    fontSize: 14,
-  },
-  imageRow: {
-    marginTop: 0,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    width: '100%',
-    alignItems: 'center',
-  },
-  touchable: {
-    width: '33%',
-    height: 100,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  emptyImage: {
-    flex: 1,
+    fontSize: 16,
+    lineHeight: 24,
   },
   segment: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginRight: -5,
+    marginBottom: 16,
   },
   pictureContainer: {
-    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  imageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  touchable: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  image: {
+    width: 100,
+    height: 100,
+  },
+  emptyImage: {
+    width: 100,
+    height: 100,
+    marginHorizontal: 4,
+    backgroundColor: '#e1e4e8',
   },
 });
