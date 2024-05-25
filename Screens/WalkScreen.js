@@ -5,6 +5,8 @@ import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
+const BASE_URL = 'http://172.30.1.54:8080';
+
 export default function WalkScreen() {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -129,7 +131,7 @@ export default function WalkScreen() {
   
         try {
           const userId = 2; // Replace with actual user id
-          await axios.post(`http://52.78.86.212:8080/walking/insert/${userId}`, {
+          await axios.post(`${BASE_URL}/walking/insert/${userId}`, {
             walking_start: DBStart,
             walking_end: DBEnd,
             walking_distance: parseFloat(totalDistance.toFixed(2)),

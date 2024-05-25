@@ -3,6 +3,8 @@ import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity } from 'rea
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
+const BASE_URL = 'http://172.30.1.54:8080';
+
 export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);
 
@@ -28,7 +30,7 @@ export default function AccountScreen({ navigation }) {
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('http://172.30.1.54:8080/api/getPost');
+      const response = await axios.get(`${BASE_URL}/api/getPost`);
       setImages(response.data);
     } catch (error) {
       console.error('Error loading images: ', error);
@@ -37,8 +39,8 @@ export default function AccountScreen({ navigation }) {
 
   const fetchUserData = async () => {
     try {
-      const userId = 3; // 임의로 설정한 userId
-      const response = await axios.get(`http://172.30.1.54:8080/user/getUser/${userId}`);
+      const userId = 1; // 임의로 설정한 userId
+      const response = await axios.get(`${BASE_URL}/user/getUser/${userId}`);
       const user = response.data[0]; // 첫 번째 요소를 사용
       setUserData(user);
     } catch (error) {

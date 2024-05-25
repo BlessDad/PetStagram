@@ -19,6 +19,20 @@ export default function HomeScreen() {
     const fetchPosts = async () => {
         try {
             const response = await axios.get(`${BASE_URL}/api/getPost`);
+            
+            for (const post of response.data) {
+                // 사용자의 닉네임 가져오기
+                const userId = post.user_id;
+                try {
+                    const nicknameResponse = await axios.get(`${BASE_URL}/api/getUserNickname/${userId}`);
+                    const userNickname = nicknameResponse.data;
+                    console.log(`사용자 ${userId}의 닉네임: ${userNickname}`);
+                    post.userNickname = userNickname; // 포스트 데이터에 사용자의 닉네임 추가
+                } catch (nicknameError) {
+                    console.error(`사용자 ${userId}의 닉네임을 불러오는 중 오류 발생:`, nicknameError);
+                }
+            }
+    
             setPosts(response.data);
         } catch (error) {
             console.error("Error loading posts: ", error);
@@ -120,9 +134,9 @@ export default function HomeScreen() {
         <View key={post.id} style={styles.postContainer}>
             <View style={styles.profileImageContainer}>
                 <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
-                <Text style={styles.username}>{post.title}</Text>
+                <Text style={styles.username}>{post.userNickname}</Text>
             </View>
-            <Image style={styles.postImage} source={{ uri: `http://52.78.86.212:8080${post.imageUrl}` }} />
+            <Image style={styles.postImage} source={{ uri: `${BASE_URL}${post.imageUrl}` }} />
             <View style={styles.buttonsContainer}>
                 <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
                     <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />

@@ -5,6 +5,8 @@ import FormData from 'form-data';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 
+const BASE_URL = 'http://172.30.1.54:8080';
+
 export default function App() {
   const [posts, setPosts] = useState([]);
   const [title, setTitle] = useState('');
@@ -18,7 +20,7 @@ export default function App() {
   const fetchPosts = async () => {
     try {
 
-      const response = await axios.get('http://52.78.86.212:8080/api/getPost');
+      const response = await axios.get(`${BASE_URL}/api/getPost`);
 
       setPosts(response.data);
     } catch (error) {
@@ -57,7 +59,7 @@ export default function App() {
   
     try {
 
-      const response = await axios.post('http://52.78.86.212:8080/api/upload', formData, {
+      const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
 
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -76,7 +78,7 @@ export default function App() {
 
 
   const handleAddPost = async () => {
-    const userId = 2; // 가정한 사용자 ID
+    const userId = 1; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       if (imageURI) {
         const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
@@ -86,7 +88,7 @@ export default function App() {
 
       try {
 
-        const response = await axios.post(`http://52.78.86.212:8080/api/insert/${userId}`, {
+        const response = await axios.post(`${BASE_URL}/api/insert/${userId}`, {
 
 
           title: title,
@@ -97,7 +99,8 @@ export default function App() {
         setContent('');
         setImageURI(null);
         fetchPosts();
-      } catch (error) {
+      } 
+      catch (error) {
         if (error.response) {
           console.error('Error adding post: ', error.response.data); // 서버 응답이 있는 경우
         } else {
@@ -111,7 +114,7 @@ export default function App() {
   const handleDeletePost = async (id) => {
     try {
 
-      await axios.delete(`http://52.78.86.212:8080/api/deletePost/${id}`);
+      await axios.delete(`${BASE_URL}/api/deletePost/${id}`);
 
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
@@ -130,7 +133,7 @@ export default function App() {
 
     try {
 
-      await axios.put(`http://52.78.86.212:8080/api/updatePost/${id}`, {
+      await axios.put(`${BASE_URL}/api/updatePost/${id}`, {
 
         title: editingTitle,
         content: editingContent,
@@ -179,7 +182,7 @@ export default function App() {
             <Text>제목: {item.title}</Text>
             <Text>내용: {item.content}</Text>
             {item.imageUrl && (
-                  <Image source={{ uri: `http://52.78.86.212:8080${item.imageUrl}` }} style={styles.image} />
+                  <Image source={{ uri: `${BASE_URL}${item.imageUrl}` }} style={styles.image} />
                 )}
             <View style={styles.buttonContainer}>
               <Button title="수정" onPress={() => setIsEditing(item.id)} />
