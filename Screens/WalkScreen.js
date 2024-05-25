@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function WalkScreen() {
@@ -10,7 +12,7 @@ export default function WalkScreen() {
   const [coordinates, setCoordinates] = useState([]);
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [totalDistance, setTotalDistance] = useState(0); // 누적 거리
+  const [totalDistance, setTotalDistance] = useState(0);
   const [calories, setCalories] = useState(0);
   const mapViewRef = useRef(null);
   const lastLocationRef = useRef(null);
@@ -39,7 +41,6 @@ export default function WalkScreen() {
             }
           ]);
 
-          // 이전 위치와 새 위치 사이의 거리 계산
           const newDistance = calculateDistance(
             lastLocationRef.current.coords.latitude,
             lastLocationRef.current.coords.longitude,
@@ -47,11 +48,8 @@ export default function WalkScreen() {
             newLocation.coords.longitude
           );
 
-          // 누적 거리 갱신
           setTotalDistance(prevDistance => prevDistance + newDistance);
-
-          // 평균 페이스, 칼로리 계산 및 설정
-          distance = totalDistance + newDistance
+          const distance = totalDistance + newDistance;
           const newCalories = calculateCalories(distance);
           setCalories(newCalories);
           lastLocationRef.current = newLocation;
@@ -88,6 +86,34 @@ export default function WalkScreen() {
     setIsRunning(prev => !prev);
   };
 
+  const handleStop = async () => {
+    if (mapViewRef.current) {
+      const snapshot = await mapViewRef.current.takeSnapshot({
+        width: 300,
+        height: 300,
+        region: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        format: 'png',
+        quality: 0.8,
+        result: 'file',
+      });
+  
+      const assetDir = `${FileSystem.documentDirectory}assets`;
+      await FileSystem.makeDirectoryAsync(assetDir, { intermediates: true });
+      const fileName = `map_snapshot_${Date.now()}.png`;
+      const fileUri = `${assetDir}/${fileName}`;
+      await FileSystem.copyAsync({ from: snapshot, to: fileUri });
+  
+      // Save to Media Library
+      await MediaLibrary.saveToLibraryAsync(fileUri);
+  
+    }
+  };
+
   const formatTime = (time) => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time % 3600) / 60);
@@ -96,7 +122,7 @@ export default function WalkScreen() {
   };
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; // meters
+    const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
     const φ2 = lat2 * Math.PI / 180;
     const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -111,8 +137,7 @@ export default function WalkScreen() {
     return d;
   };
 
-  const calculateCalories = (distance) => {
-    const caloriesBurnedPerMeter = 0.06;
+  const calculateCalories = (distance) => { const caloriesBurnedPerMeter = 0.06;
     return distance * caloriesBurnedPerMeter;
   };
 
@@ -157,16 +182,15 @@ export default function WalkScreen() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.startButton} onPress={handleStartStop}>
           {isRunning ? (
-            <Icon name="stop" size={30} color="#fff" />
+            <Icon name="pause" size={30} color="#fff" />
           ) : (
             <Icon name="play" size={30} color="#fff" />
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.startButton}>
+        <TouchableOpacity style={styles.startButton} onPress={handleStop}>
           <Icon name="stop" size={30} color="#fff" />
         </TouchableOpacity>
       </View>
-
     </View>
   );
 }

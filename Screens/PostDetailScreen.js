@@ -12,7 +12,7 @@ export default function PostDetailScreen({ route }) {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`http://223.194.136.236:3000/api/getComments/${id}`);
+      const response = await axios.get(`http://52.78.86.212:8080/api/getComments/${id}`);
       setComments(response.data);
     } catch (error) {
       if (error.response && error.response.status === 404) {
