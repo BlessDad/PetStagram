@@ -5,7 +5,7 @@ import FormData from 'form-data';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const BASE_URL = 'http://172.30.1.54:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
 
 export default function App() {
   const [posts, setPosts] = useState([]);

@@ -3,7 +3,7 @@ import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity } from 'rea
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
-const BASE_URL = 'http://172.30.1.54:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
 
 export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);

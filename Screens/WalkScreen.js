@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const BASE_URL = 'http://172.30.1.54:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
 
 export default function WalkScreen() {
   const [location, setLocation] = useState(null);

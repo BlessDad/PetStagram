@@ -3,7 +3,7 @@ import { Text, View, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, A
 import axios from 'axios';
 
 
-const BASE_URL = 'http://172.30.1.54:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
 
 export default function HomeScreen() {
     const [posts, setPosts] = useState([]);
