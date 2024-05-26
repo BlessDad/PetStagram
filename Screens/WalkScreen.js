@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function WalkScreen() {
@@ -10,18 +12,19 @@ export default function WalkScreen() {
   const [coordinates, setCoordinates] = useState([]);
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [totalDistance, setTotalDistance] = useState(0); // 누적 거리
+  const [totalDistance, setTotalDistance] = useState(0); 
   const [calories, setCalories] = useState(0);
-  const [loading, setLoading] = useState(true); // 로딩 상태 추가
+  const [loading, setLoading] = useState(true); 
   const mapViewRef = useRef(null);
   const lastLocationRef = useRef(null);
+  const startTimeRef = useRef(null);
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('Permission to access location was denied');
-        setLoading(false); // 권한 거부 시 로딩 상태 해제
+        setLoading(false);
         return;
       }
 
@@ -51,15 +54,16 @@ export default function WalkScreen() {
 
           // 누적 거리 갱신
           setTotalDistance(prevDistance => prevDistance + newDistance);
+          const distance = totalDistance + newDistance;
 
           // 칼로리 계산 및 설정
-          const newCalories = calculateCalories(totalDistance + newDistance);
+          const newCalories = calculateCalories(distance);
           setCalories(newCalories);
           lastLocationRef.current = newLocation;
         }
       });
     })();
-  }, [isRunning]);
+  }, [isRunning, totalDistance]);
 
   useEffect(() => {
     let intervalId;
@@ -74,8 +78,47 @@ export default function WalkScreen() {
     return () => clearInterval(intervalId);
   }, [isRunning]);
 
+  useEffect(() => {
+    if (location && mapViewRef.current) {
+      mapViewRef.current.animateToRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    }
+  }, [location]);
+
   const handleStartStop = () => {
     setIsRunning(prev => !prev);
+  };
+
+  const handleStop = async () => {
+    if (mapViewRef.current) {
+      const snapshot = await mapViewRef.current.takeSnapshot({
+        width: 300,
+        height: 300,
+        region: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        format: 'png',
+        quality: 0.8,
+        result: 'file',
+      });
+  
+      const assetDir = `${FileSystem.documentDirectory}assets`;
+      await FileSystem.makeDirectoryAsync(assetDir, { intermediates: true });
+      const fileName = `map_snapshot_${Date.now()}.png`;
+      const fileUri = `${assetDir}/${fileName}`;
+      await FileSystem.copyAsync({ from: snapshot, to: fileUri });
+  
+      // Save to Media Library
+      await MediaLibrary.saveToLibraryAsync(fileUri);
+  
+    }
   };
 
   const formatTime = (time) => {
@@ -106,6 +149,13 @@ export default function WalkScreen() {
     return distance * caloriesBurnedPerMeter;
   };
 
+  let text = 'Waiting...';
+  if (errorMsg) {
+    text = errorMsg;
+  } else if (location) {
+    text = JSON.stringify(location);
+  }
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -121,7 +171,7 @@ export default function WalkScreen() {
         <MapView
           ref={mapViewRef}
           style={{ flex: 1 }}
-          region={{
+          initialRegion={{
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
             latitudeDelta: 0.01,
@@ -149,12 +199,12 @@ export default function WalkScreen() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.startButton} onPress={handleStartStop}>
           {isRunning ? (
-            <Icon name="stop" size={30} color="#fff" />
+            <Icon name="pause" size={30} color="#fff" />
           ) : (
             <Icon name="play" size={30} color="#fff" />
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.startButton}>
+        <TouchableOpacity style={styles.startButton} onPress={handleStop}>
           <Icon name="stop" size={30} color="#fff" />
         </TouchableOpacity>
       </View>

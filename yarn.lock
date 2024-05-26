@@ -4496,7 +4496,7 @@
   dependencies:
     "@expo/config" "~9.0.0-beta.0"
 
-"expo-file-system@~17.0.1":
+"expo-file-system@^17.0.1", "expo-file-system@~17.0.1":
   "integrity" "sha512-dYpnZJqTGj6HCYJyXAgpFkQWsiCH3HY1ek2cFZVHFoEc5tLz9gmdEgTF6nFHurvmvfmXqxi7a5CXyVm0aFYJBw=="
   "resolved" "https://registry.npmjs.org/expo-file-system/-/expo-file-system-17.0.1.tgz"
   "version" "17.0.1"
@@ -4529,6 +4529,11 @@
   "integrity" "sha512-m+OzotzlAXO3ZZ1uqW5GC25nXW868zN+ROyBA1V4VF6jGay1ZEs4URPglCVUDzZby2F5wt24cMzqDKw2IX6nRw=="
   "resolved" "https://registry.npmjs.org/expo-location/-/expo-location-17.0.1.tgz"
   "version" "17.0.1"
+
+"expo-media-library@^16.0.3":
+  "integrity" "sha512-E++h+ZyVOXhGOKddeg/wjoEFH+JAGazcAsMpjAOT+/F69nrIEl27Fymi9XVAzooazp38dKrDBNeOJuWoXUdUAw=="
+  "resolved" "https://registry.npmjs.org/expo-media-library/-/expo-media-library-16.0.3.tgz"
+  "version" "16.0.3"
 
 "expo-modules-autolinking@>=0.8.1", "expo-modules-autolinking@1.11.1":
   "integrity" "sha512-2dy3lTz76adOl7QUvbreMCrXyzUiF8lygI7iFJLjgIQIVH+43KnFWE5zBumpPbkiaq0f0uaFpN9U0RGQbnKiMw=="

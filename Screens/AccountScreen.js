@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
+const BASE_URL = 'http://52.78.86.212:8080';
+
 export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchImages();
@@ -12,7 +15,7 @@ export default function AccountScreen({ navigation }) {
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('http://192.168.35.244:3000/api/getPost');
+      const response = await axios.get(`${BASE_URL}/api/getPost`);
       setImages(response.data);
     } catch (error) {
       console.error('Error loading images: ', error);
@@ -58,8 +61,19 @@ export default function AccountScreen({ navigation }) {
     return imageRows;
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchImages();
+    setRefreshing(false);
+  };
+
   return (
-    <ScrollView style={[{ backgroundColor: '#FFFFFF' }, { flex: 1 }]}>
+    <ScrollView
+      style={[{ backgroundColor: '#FFFFFF' }, { flex: 1 }]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.container}>
         <View style={styles.profileContainer}>
           <Image

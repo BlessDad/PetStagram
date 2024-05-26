@@ -17,7 +17,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.petstagram.petstagram",
-      "config": {"googleMaps": {"apiKey": "AIzaSyAUjFOO3b2JNaZ4M8hQP0Ke_xtbzMgK-W8"}}
+      "config": {"googleMaps": {"apiKey": "AIzaSyAUjFOO3b2JNaZ4M8hQP0Ke_xtbzMgK-W8"}},
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to track your walk.",
+        "NSPhotoLibraryAddUsageDescription": "We need access to your photo library to save map snapshots."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +29,13 @@
         "backgroundColor": "#ffffff",
         "package": "com.petstagram.petstagram",
         "config": {"googleMaps": {"apiKey": "AIzaSyAUjFOO3b2JNaZ4M8hQP0Ke_xtbzMgK-W8"}}
-      }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_MEDIA_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

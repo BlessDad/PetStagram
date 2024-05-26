@@ -4,6 +4,8 @@ import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
+const BASE_URL = 'http://52.78.86.212:8080';
+
 export default function HomeScreen() {
   const [posts, setPosts] = useState([]);
   const [likeCounts, setLikeCounts] = useState({});
@@ -21,7 +23,7 @@ export default function HomeScreen() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://192.168.35.244:3000/api/getPost');
+      const response = await axios.get(`${BASE_URL}/api/getPost`);
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -57,7 +59,7 @@ export default function HomeScreen() {
     });
 
     try {
-      const response = await axios.post('http://192.168.35.244:3000/api/upload', formData, {
+      const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -77,7 +79,7 @@ export default function HomeScreen() {
     }
 
     try {
-      await axios.put(`http://192.168.35.244:3000/api/updatePost/${id}`, {
+      await axios.put(`${BASE_URL}/api/updatePost/${id}`, {
         title: editingTitle,
         content: editingContent,
         imageUrl: imageUrl,
@@ -96,7 +98,7 @@ export default function HomeScreen() {
 
   const handleDeletePost = async (id) => {
     try {
-      await axios.delete(`http://192.168.35.244:3000/api/deletePost/${id}`);
+      await axios.delete(`${BASE_URL}/api/deletePost/${id}`);
       fetchPosts();
       Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
     } catch (error) {
@@ -107,7 +109,7 @@ export default function HomeScreen() {
 
   const fetchComments = async (postId) => {
     try {
-      const response = await axios.get(`http://192.168.35.244:3000/api/getComments/${postId}`);
+      const response = await axios.get(`${BASE_URL}/api/getComments/${postId}`);
       setComments((prevComments) => ({
         ...prevComments,
         [postId]: { showComments: true, comments: response.data }
@@ -145,7 +147,7 @@ export default function HomeScreen() {
   const handleCommentSubmit = async (postId) => {
     if (commentText.trim() !== '') {
       try {
-        await axios.post('http://192.168.35.244:3000/api/addComment', {
+        await axios.post(`${BASE_URL}/api/addComment`, {
           postId,
           comment: commentText,
         });
@@ -160,7 +162,7 @@ export default function HomeScreen() {
 
   const handleDeleteComment = async (commentId, postId) => {
     try {
-      await axios.delete(`http://192.168.35.244:3000/api/deleteComment/${commentId}`);
+      await axios.delete(`${BASE_URL}/api/deleteComment/${commentId}`);
       await fetchComments(postId);
     } catch (error) {
       console.error('댓글 삭제 실패:', error);

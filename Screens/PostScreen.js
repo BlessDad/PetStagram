@@ -7,6 +7,8 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
+const BASE_URL = 'http://52.78.86.212:8080';
+
 export default function App() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -35,7 +37,7 @@ export default function App() {
     });
   
     try {
-      const response = await axios.post('http://192.168.35.244:3000/api/upload', formData, {
+      const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -55,7 +57,7 @@ export default function App() {
         imageUrl = await uploadImage(imageURI, fileName);
       }
       try {
-        await axios.post('http://192.168.35.244:3000/api/insert', {
+        await axios.post(`${BASE_URL}/api/insert`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송

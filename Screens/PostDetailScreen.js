@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import axios from 'axios';
 
+const BASE_URL = 'http://52.78.86.212:8080';
+
 export default function PostDetailScreen({ route }) {
   const { id, title, image_url, content } = route.params;
   const [comments, setComments] = useState([]);
@@ -12,7 +14,7 @@ export default function PostDetailScreen({ route }) {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`http://192.168.35.244:3000/api/getComments/${id}`);
+      const response = await axios.get(`${BASE_URL}/api/getComments/${id}`);
       setComments(response.data);
     } catch (error) {
       if (error.response && error.response.status === 404) {
