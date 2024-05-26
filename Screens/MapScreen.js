@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import axios from 'axios';
+
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +39,7 @@ export default function MapScreen() {
   // 즐겨찾기에 추가하기
   const addToFavorites = async (placeId) => {
     try {
+      const userId = 1;
       // 장소 세부 정보 가져오기
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,formatted_phone_number&key=AIzaSyAUjFOO3b2JNaZ4M8hQP0Ke_xtbzMgK-W8`
@@ -45,11 +50,53 @@ export default function MapScreen() {
       // 가져온 장소 세부 정보를 즐겨찾기에 추가
       setFavoritedPlaces(prevState => [...prevState, placeDetails]);
 
+      // DB 삽입
+      const DBResponse = await axios.post(`${BASE_URL}/bookmark/insert/${userId}`, {
+        bookmark_address : placeDetails.formatted_address,
+        bookmark_name : placeDetails.name
+      });
+
       // 추가된 장소 확인
       console.log('즐겨찾기에 추가된 장소:', placeDetails);
     } catch (error) {
       console.error('Error adding to favorites:', error);
     }
+  };
+
+  // 즐겨찾기 목록 렌더링
+  const FavoritedPlaces = () => {
+    const [favoritedPlaces, setFavoritedPlaces] = useState([]);
+  
+    useEffect(() => {
+      // userId를 1로 설정
+      const userId = 1;
+      
+      // API 호출
+      axios.get(`${BASE_URL}/bookmark/getBookmark/${userId}`)
+        .then(response => {
+          setFavoritedPlaces(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching favorited places:', error);
+        });
+    }, []);
+  
+    return (
+      <FlatList
+        data={favoritedPlaces}
+        renderItem={({ item }) => (
+          <View style={styles.listItemStyle}>
+            <Text>{item.bookmark_name}</Text>
+            <Text>{item.bookmark_address}</Text>
+          </View>
+        )}
+        keyExtractor={item => item.bookmark_id.toString()}
+        style={styles.resultListContainer}
+        ItemSeparatorComponent={() => (
+          <View style={styles.lineContainer} />
+        )}
+      />
+    );
   };
 
   // 즐겨찾기 목록 표시 여부를 토글하는 함수

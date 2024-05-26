@@ -7,6 +7,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
+//const BASE_URL = 'http://3.35.26.234:8080';
 const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function App() {
@@ -32,8 +33,8 @@ export default function App() {
     const formData = new FormData();
     formData.append('image', {
       uri,
-      type: 'image/jpeg', // 이미지 타입
-      name: fileName, // 이미지 이름
+      type: 'image/jpeg', // 이미지 타입 (필요에 따라 수정)
+      name: fileName, // 이미지 이름 (필요에 따라 수정)
     });
   
     try {
@@ -42,7 +43,10 @@ export default function App() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data.imageUrl; // 서버 응답에서 이미지 URL을 반환
+      console.log('Uploaded Image Uri: ' + response.data); // 서버 응답 로그 출력
+      // console.log('Uploaded Image URL:', response.assests[0].imageUrl); // 서버 응답 로그 출력
+      console.log(uri);
+      return response.data;
     } catch (error) {
       console.error('Image upload failed: ', error);
       return null;
@@ -50,14 +54,15 @@ export default function App() {
   };
 
   const handleAddPost = async () => {
+    const userId = 1; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
-      let imageUrl = null;
       if (imageURI) {
         const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
         imageUrl = await uploadImage(imageURI, fileName);
+        console.log('Image URL:', imageURI); // 이미지 URL 로그 출력
       }
       try {
-        await axios.post(`${BASE_URL}/api/insert`, {
+        const response = await axios.post(`${BASE_URL}/api/insert/${userId}`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
@@ -65,8 +70,9 @@ export default function App() {
         setTitle('');
         setContent('');
         setImageURI(null);
-        Alert.alert('게시물 추가 성공', '게시물이 성공적으로 추가되었습니다.');
-      } catch (error) {
+        fetchPosts();
+      } 
+      catch (error) {
         if (error.response) {
           console.error('Error adding post: ', error.response.data); // 서버 응답이 있는 경우
         } else {

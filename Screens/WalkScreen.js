@@ -5,6 +5,10 @@ import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import Icon from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
+
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function WalkScreen() {
   const [location, setLocation] = useState(null);
@@ -18,6 +22,9 @@ export default function WalkScreen() {
   const mapViewRef = useRef(null);
   const lastLocationRef = useRef(null);
   const startTimeRef = useRef(null);
+
+  const [startWalking, setStartWalking] = useState(null);
+  const [endWalking, setEndWalking] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -90,10 +97,70 @@ export default function WalkScreen() {
   }, [location]);
 
   const handleStartStop = () => {
+    if (!isRunning) {
+      setStartWalking(new Date());
+    }
     setIsRunning(prev => !prev);
   };
 
   const handleStop = async () => {
+    const endWalkingTime = new Date();
+    setEndWalking(endWalkingTime);
+
+    if (startWalking && endWalkingTime) {
+      const startYear = startWalking.getFullYear().toString();
+      const startMonth = startWalking.getMonth() + 1;
+      const startDate = startWalking.getDate();
+      const startHour = startWalking.getHours();
+      const startMinute = startWalking.getMinutes();
+      const startSecond = startWalking.getSeconds();
+
+      const DBStart = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDate).padStart(2, '0')}T${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:${String(startSecond).padStart(2, '0')}`;
+
+      const endYear = endWalkingTime.getFullYear().toString();
+      const endMonth = endWalkingTime.getMonth() + 1;
+      const endDate = endWalkingTime.getDate();
+      const endHour = endWalkingTime.getHours();
+      const endMinute = endWalkingTime.getMinutes();
+      const endSecond = endWalkingTime.getSeconds();
+
+      const DBEnd = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDate).padStart(2, '0')}T${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}:${String(endSecond).padStart(2, '0')}`;
+
+      const walkDuration = (endWalkingTime - startWalking) / 1000; // Duration in seconds
+      const hours = Math.floor(walkDuration / 3600);
+      const minutes = Math.floor((walkDuration % 3600) / 60);
+      const seconds = Math.floor(walkDuration % 60);
+
+      const totalWalkingTime = seconds + minutes * 60 + hours * 60 * 60;
+
+      console.log(`산책 정보:\n\n시작 시간: ${DBStart}\n종료 시간: ${DBEnd}\n거리: ${totalDistance.toFixed(2)} meters\n칼로리: ${calories.toFixed(2)} kcal\n산책 시간 : ${hours}시간 ${minutes}분 ${seconds}초 \n    산책 시간 (초) : ${totalWalkingTime}`);
+
+      try {
+        const userId = 2; // Replace with actual user id
+        await axios.post(`${BASE_URL}/walking/insert/${userId}`, {
+          walking_start: DBStart,
+          walking_end: DBEnd,
+          walking_distance: parseFloat(totalDistance.toFixed(2)),
+          walking_calorie: parseInt(calories.toFixed(2)),
+          walking_speed: parseFloat(totalDistance / totalWalkingTime),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json', // Content-Type 헤더를 JSON으로 설정
+          },
+        });
+        console.log("Walk data saved successfully");
+      } catch (error) {
+        if (error.response) {
+          console.error('Error adding walking: ', error); // 서버 응답이 있는 경우
+        } else {
+          console.error('Error adding walking: ', error); // 서버 응답이 없는 경우
+        }
+      }
+    } else {
+      console.warn("시작 시간 또는 종료 시간이 없습니다.");
+    }
+
     if (mapViewRef.current) {
       const snapshot = await mapViewRef.current.takeSnapshot({
         width: 300,
@@ -108,17 +175,17 @@ export default function WalkScreen() {
         quality: 0.8,
         result: 'file',
       });
-  
+
       const assetDir = `${FileSystem.documentDirectory}assets`;
       await FileSystem.makeDirectoryAsync(assetDir, { intermediates: true });
       const fileName = `map_snapshot_${Date.now()}.png`;
       const fileUri = `${assetDir}/${fileName}`;
       await FileSystem.copyAsync({ from: snapshot, to: fileUri });
-  
+
       // Save to Media Library
       await MediaLibrary.saveToLibraryAsync(fileUri);
-  
     }
+    setIsRunning(false);
   };
 
   const formatTime = (time) => {

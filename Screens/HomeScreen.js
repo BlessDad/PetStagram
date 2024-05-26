@@ -4,6 +4,7 @@ import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
+//const BASE_URL = 'http://3.35.26.234:8080';
 const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function HomeScreen() {
@@ -24,6 +25,19 @@ export default function HomeScreen() {
   const fetchPosts = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/getPost`);
+
+      for (const post of response.data) {
+        // 사용자의 닉네임 가져오기
+        const userId = post.user_id;
+        try {
+            const nicknameResponse = await axios.get(`${BASE_URL}/api/getUserNickname/${userId}`);
+            const userNickname = nicknameResponse.data;
+            console.log(`사용자 ${userId}의 닉네임: ${userNickname}`);
+            post.userNickname = userNickname; // 포스트 데이터에 사용자의 닉네임 추가
+        } catch (nicknameError) {
+            console.error(`사용자 ${userId}의 닉네임을 불러오는 중 오류 발생:`, nicknameError);
+          }
+        }
       setPosts(response.data);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -146,19 +160,32 @@ export default function HomeScreen() {
 
   const handleCommentSubmit = async (postId) => {
     if (commentText.trim() !== '') {
+      Alert.alert('입력된 댓글', commentText);
       try {
-        await axios.post(`${BASE_URL}/api/addComment`, {
-          postId,
-          comment: commentText,
-        });
-        setCommentText('');
-        await fetchComments(postId);
+          const response = await axios.post(`${BASE_URL}/comment/insert/${postId}`, {
+              comment_writer: 'User',
+              comment_content: commentText,
+          }, {
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+          });
+          if (response.status === 201) { // 201 Created
+              console.log('댓글이 성공적으로 추가되었습니다:', response.data);
+              setCommentText('');
+              await fetchComments(postId);
+          } else {
+              console.error('댓글 추가 실패:', response.data);
+              Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
+          }
       } catch (error) {
-        console.error('댓글 추가 실패:', error);
-        Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
+          console.error('댓글 추가 실패:', error);
+          Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
       }
-    }
-  };
+  } else {
+      Alert.alert('댓글 내용이 비어 있습니다', '댓글을 입력해주세요.');
+  }
+};
 
   const handleDeleteComment = async (commentId, postId) => {
     try {
@@ -183,7 +210,7 @@ export default function HomeScreen() {
       <View style={styles.profileRow}>
         <View style={styles.profileImageContainer}>
           <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
-          <Text style={styles.username}>{post.title}</Text>
+          <Text style={styles.username}>{post.userNickname}</Text>
         </View>
         <View style={styles.buttonRow}>
           <Button title="수정" onPress={() => {
@@ -195,7 +222,7 @@ export default function HomeScreen() {
           <Button title="삭제" onPress={() => handleDeletePost(post.id)} />
         </View>
       </View>
-      <Image style={styles.postImage} source={{ uri: post.image_url }} />
+      <Image style={styles.postImage} source={{ uri: `${BASE_URL}${post.imageUrl}` }} />
       <View style={styles.buttonsContainer}>
         <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
           <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
@@ -322,6 +349,7 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 10,
   },
   postImage: {
     width: '100%',
