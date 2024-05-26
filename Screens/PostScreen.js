@@ -7,8 +7,8 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-//const BASE_URL = 'http://3.35.26.234:8080';
-const BASE_URL = 'http://52.78.86.212:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function App() {
   const [title, setTitle] = useState('');
@@ -54,7 +54,7 @@ export default function App() {
   };
 
   const handleAddPost = async () => {
-    const userId = 1; // 가정한 사용자 ID
+    const userId = 2; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       if (imageURI) {
         const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
@@ -100,7 +100,7 @@ export default function App() {
           style={styles.input}
           value={title}
           onChangeText={setTitle}
-          placeholder="사용자를 입력하세요"
+          placeholder="제목을 입력하세요"
         />
       </View>
       <View style={styles.inputContainer}>
