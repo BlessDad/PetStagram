@@ -4,8 +4,8 @@ import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-//const BASE_URL = 'http://3.35.26.234:8080';
-const BASE_URL = 'http://52.78.86.212:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function HomeScreen() {
   const [posts, setPosts] = useState([]);
@@ -123,7 +123,8 @@ export default function HomeScreen() {
 
   const fetchComments = async (postId) => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/getComments/${postId}`);
+      const response = await axios.get(`${BASE_URL}/comment/getComment/${postId}`);
+      console.log(response.data);
       setComments((prevComments) => ({
         ...prevComments,
         [postId]: { showComments: true, comments: response.data }
@@ -160,42 +161,54 @@ export default function HomeScreen() {
 
   const handleCommentSubmit = async (postId) => {
     if (commentText.trim() !== '') {
-      Alert.alert('입력된 댓글', commentText);
-      try {
-          const response = await axios.post(`${BASE_URL}/comment/insert/${postId}`, {
-              comment_writer: 'User',
-              comment_content: commentText,
-          }, {
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-          });
-          if (response.status === 201) { // 201 Created
-              console.log('댓글이 성공적으로 추가되었습니다:', response.data);
-              setCommentText('');
-              await fetchComments(postId);
-          } else {
-              console.error('댓글 추가 실패:', response.data);
-              Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
-          }
-      } catch (error) {
-          console.error('댓글 추가 실패:', error);
-          Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
-      }
-  } else {
-      Alert.alert('댓글 내용이 비어 있습니다', '댓글을 입력해주세요.');
-  }
+        Alert.alert('입력된 댓글', commentText);
+        try {
+            const response = await axios.post(`${BASE_URL}/comment/insert/${postId}`, {
+                comment_writer: 'User',
+                comment_content: commentText,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (response.status === 201) { // 201 Created
+                console.log('댓글이 성공적으로 추가되었습니다:', response.data);
+                setCommentText('');
+                await fetchComments(postId); // 댓글 추가 후 댓글 다시 불러오기
+            } else {
+                console.error('댓글 추가 실패:', response.data);
+                Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('댓글 추가 실패:', error);
+            Alert.alert('댓글 추가 실패', '댓글 추가 중 오류가 발생했습니다.');
+        }
+    } else {
+        Alert.alert('댓글 내용이 비어 있습니다', '댓글을 입력해주세요.');
+    }
 };
 
-  const handleDeleteComment = async (commentId, postId) => {
-    try {
-      await axios.delete(`${BASE_URL}/api/deleteComment/${commentId}`);
-      await fetchComments(postId);
-    } catch (error) {
-      console.error('댓글 삭제 실패:', error);
-      Alert.alert('댓글 삭제 실패', '댓글 삭제 중 오류가 발생했습니다.');
+
+const handleDeleteComment = async (commentId, postId) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/comment/deleteComment/${commentId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        // 필요한 경우 추가 헤더 설정
+      },
+    });
+    console.log('Delete response:', response.data);
+    await fetchComments(postId);
+  } catch (error) {
+    console.error('댓글 삭제 실패:', error);
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+      console.error('Response headers:', error.response.headers);
     }
-  };
+    Alert.alert('댓글 삭제 실패', '댓글 삭제 중 오류가 발생했습니다.');
+  }
+};
 
   const handleDirect = (index) => {
     // Direct 버튼 클릭 시 처리할 로직
@@ -279,8 +292,8 @@ export default function HomeScreen() {
           {(comments[post.id].comments && comments[post.id].comments.length > 0) ? (
             comments[post.id].comments.map((comment, index) => (
               <View key={index} style={styles.commentItem}>
-                <Text>{comment.comment}</Text>
-                <TouchableOpacity onPress={() => handleDeleteComment(comment.id, post.id)} style={styles.deleteButton}>
+                <Text>{comment.comment_content}</Text>
+                <TouchableOpacity onPress={() => handleDeleteComment(comment.comment_id, post.id)} style={styles.deleteButton}>
                   <Text style={styles.deleteButtonText}>삭제</Text>
                 </TouchableOpacity>
               </View>
