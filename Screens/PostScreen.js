@@ -7,8 +7,8 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-//const BASE_URL = 'http://3.35.26.234:8080';
-const BASE_URL = 'http://52.78.86.212:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function App() {
   const [title, setTitle] = useState('');
@@ -53,7 +53,7 @@ export default function App() {
   };
 
   const handleAddPost = async () => {
-    const userId = 3; // 가정한 사용자 ID
+    const userId = 2; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       let imageUrl = null;
       if (imageURI) {

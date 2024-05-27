@@ -26,6 +26,8 @@ export default function WalkScreen() {
   const [startWalking, setStartWalking] = useState(null);
   const [endWalking, setEndWalking] = useState(null);
 
+  const [WalkingImageUrl, setWalkingImageUrl] = useState(null);
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -135,6 +137,7 @@ export default function WalkScreen() {
 
       console.log(`산책 정보:\n\n시작 시간: ${DBStart}\n종료 시간: ${DBEnd}\n거리: ${totalDistance.toFixed(2)} meters\n칼로리: ${calories.toFixed(2)} kcal\n산책 시간 : ${hours}시간 ${minutes}분 ${seconds}초 \n    산책 시간 (초) : ${totalWalkingTime}`);
 
+
       try {
         const userId = 2; // Replace with actual user id
         await axios.post(`${BASE_URL}/walking/insert/${userId}`, {
@@ -150,7 +153,8 @@ export default function WalkScreen() {
           },
         });
         console.log("Walk data saved successfully");
-      } catch (error) {
+      } 
+      catch (error) {
         if (error.response) {
           console.error('Error adding walking: ', error); // 서버 응답이 있는 경우
         } else {
@@ -182,8 +186,36 @@ export default function WalkScreen() {
       const fileUri = `${assetDir}/${fileName}`;
       await FileSystem.copyAsync({ from: snapshot, to: fileUri });
 
-      // Save to Media Library
-      await MediaLibrary.saveToLibraryAsync(fileUri);
+      
+
+     // 이미지 업로드
+      const formData = new FormData();
+      formData.append('image', {
+        uri: fileUri,
+        name: fileName,
+        type: 'image/png',
+      });
+
+      try {
+        const response = await axios.post(`${BASE_URL}/walking/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+    
+        if (response.status === 201) {
+          setWalkingImageUrl(response.data);
+          console.log('Uploaded Image Uri (1): ' + response.data); // 서버 응답 로그 출력
+          console.log('File uploaded successfully');
+
+        } else {
+          console.log('Failed to upload file');
+        }
+      } 
+      catch (error) {
+        console.error('Error uploading file:', error);
+      }
+
     }
     setIsRunning(false);
   };
