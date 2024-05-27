@@ -3,9 +3,8 @@ import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, RefreshCon
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
-const BASE_URL = 'http://3.35.26.234:8080';
-//const BASE_URL = 'http://52.78.86.212:8080';
-
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);
@@ -21,7 +20,6 @@ export default function AccountScreen({ navigation }) {
   });
 
   useEffect(() => {
-    fetchImages();
     fetchUserData();
   }, []);
 
@@ -30,47 +28,45 @@ export default function AccountScreen({ navigation }) {
     console.log(userData);
   }, [userData]);
 
-  const fetchImages = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/getPost`);
-      setImages(response.data);
-    } catch (error) {
-      console.error('Error loading images: ', error);
-    }
-  };
-  
   const fetchUserData = async () => {
     try {
-      const userId = 1; // 임의로 설정한 userId
-      const response = await axios.get(`${BASE_URL}/user/getUser/${userId}`);
-      const user = response.data[0]; // 첫 번째 요소를 사용
+      const userId = 3; // 임의로 설정한 userId
+      const userResponse = await axios.get(`${BASE_URL}/user/getUser/${userId}`);
+      const user = userResponse.data[0]; // 첫 번째 요소를 사용
       setUserData(user);
+
+      const postsResponse = await axios.get(`${BASE_URL}/api/getPost`);
+      const userPosts = postsResponse.data.filter(post => post.user_id === userId);
+      setImages(userPosts); // 사용자 데이터에서 posts 배열을 추출하여 설정
     } catch (error) {
       console.error('Error loading user data: ', error);
     }
   };
-  
+
   const handleImagePress = (image) => {
     navigation.navigate('PostDetail', {
       id: image.id,
       title: image.title,
       content: image.content,
-      image_url: image.image_url,
+      image_url: image.imageUrl,
     });
   };
 
   const renderImageRows = () => {
     const imageRows = [];
     let currentRow = [];
-
+  
     images.forEach((image, index) => {
+      const imageUrl = `${BASE_URL}${image.imageUrl}`;
+      console.log(`Loading image: ${imageUrl}`);
+  
       currentRow.push(
         <TouchableOpacity key={index} onPress={() => handleImagePress(image)} style={styles.touchable}>
           <Image
             style={styles.image}
-            source={{ uri: image.image_url }}
-            //source={{ uri: `${BASE_URL}${post.imageUrl}` }}
-            // source={{ uri: `${BASE_URL}${image.image_url}` }}
+            source={{ uri: imageUrl }}
+            onLoad={() => console.log(`Image loaded: ${imageUrl}`)}
+            onError={(error) => console.error(`Error loading image: ${imageUrl}`, error)}
           />
         </TouchableOpacity>
       );
@@ -92,14 +88,15 @@ export default function AccountScreen({ navigation }) {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchImages();
+    await fetchUserData();
     setRefreshing(false);
   };
 
   return (
     <ScrollView
       style={[{ backgroundColor: '#FFFFFF' }, { flex: 1 }]}
-      refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> } >
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.container}>
         <View style={styles.profileContainer}>
           <Image
@@ -139,65 +136,66 @@ export default function AccountScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
     flex: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    padding: 20,
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   profileImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginRight: 16,
+    marginRight: 20,
   },
   userInfo: {
-    flex: 1,
+    flexDirection: 'column',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    width: '80%',
+    marginTop: -30,
   },
   stats: {
     fontSize: 20,
-    fontWeight: 'bold',
   },
   stats2Container: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 4,
+    width: '80%',
+    marginTop: 0,
   },
   stats2: {
-    fontSize: 12,
-    color: 'gray',
+    fontSize: 14,
   },
   introContainer: {
-    marginBottom: 16,
+    width: '100%',
+    marginTop: 10,
   },
   introText: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 14,
   },
   imageRow: {
+    marginTop: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    justifyContent: 'flex-start',
+    width: '100%',
+    alignItems: 'center',
   },
   touchable: {
-    flex: 1,
-    marginHorizontal: 4,
+    width: '33%',
+    height: 100,
   },
   image: {
     width: '100%',
     height: '100%',
   },
   emptyImage: {
-    width: 100,
-    height: 100,
-    marginHorizontal: 4,
-    backgroundColor: '#e1e4e8',
+    flex: 1,
   },
   segment: {
     flexDirection: 'column',
@@ -205,6 +203,7 @@ const styles = StyleSheet.create({
     marginRight: -5,
   },
   pictureContainer: {
+    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
   },

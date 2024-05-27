@@ -4,8 +4,8 @@ import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import axios from 'axios';
 
-const BASE_URL = 'http://3.35.26.234:8080';
-//const BASE_URL = 'http://52.78.86.212:8080';
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
