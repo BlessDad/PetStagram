@@ -52,8 +52,6 @@ export default function HomeScreen() {
     }
   };
   
-    
-
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchPosts();
@@ -81,27 +79,31 @@ export default function HomeScreen() {
       type: 'image/jpeg',
       name: fileName,
     });
-
+  
     try {
       const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data.imageUrl;
+      return response.data; // 서버에서 반환된 이미지 URL
     } catch (error) {
       console.error('Image upload failed: ', error);
       return null;
     }
-  };
+  };  
 
   const handleEditPost = async (id) => {
     let imageUrl = editingImageURI;
-    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image_url) {
-      const fileName = `${editingTitle.replace(/\s+/g, '_')}.jpg`;
+  
+    // 이미지 업로드를 항상 수행
+    if (editingImageURI) {
+      const fileName = `${editingTitle.replace(/\s+/g, '_')}0.jpg`;
+      console.log('Starting image upload...');
       imageUrl = await uploadImage(editingImageURI, fileName);
+      console.log('Uploaded image URL:', imageUrl);
     }
-
+  
     try {
       await axios.put(`${BASE_URL}/api/updatePost/${id}`, {
         title: editingTitle,
@@ -118,7 +120,7 @@ export default function HomeScreen() {
       console.error('게시물 수정 실패:', error);
       Alert.alert('게시물 수정 실패', '게시물 수정 중 오류가 발생했습니다.');
     }
-  };
+  };    
 
   const handleDeletePost = async (id) => {
     try {
@@ -229,7 +231,6 @@ const handleDeleteComment = async (commentId, postId) => {
   };
 
   const renderPosts = ({ item: post }) => {
-    console.log(post); // 각 게시글 데이터를 출력하여 확인
     return (
       <View key={post.id} style={styles.postContainer}>
         <View style={styles.profileRow}>
