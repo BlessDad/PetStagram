@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, Image, StyleSheet, TouchableOpacity, TextInput, Alert, FlatList, RefreshControl, Button } from 'react-native';
 import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from 'expo-image-picker'; 
 
-const BASE_URL = 'http://3.35.26.234:8080';
-//const BASE_URL = 'http://52.78.86.212:8080';
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function HomeScreen() {
   const [posts, setPosts] = useState([]);
@@ -25,24 +25,34 @@ export default function HomeScreen() {
   const fetchPosts = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/getPost`);
-
-      for (const post of response.data) {
-        // 사용자의 닉네임 가져오기
+      const postsData = response.data;
+      const userNicknameCache = {}; // 닉네임 캐시
+  
+      for (const post of postsData) {
         const userId = post.user_id;
-        try {
+        if (userNicknameCache[userId]) {
+          // 캐시에 있는 닉네임 사용
+          post.userNickname = userNicknameCache[userId];
+        } else {
+          try {
             const nicknameResponse = await axios.get(`${BASE_URL}/api/getUserNickname/${userId}`);
-            const userNickname = nicknameResponse.data;
-            console.log(`사용자 ${userId}의 닉네임: ${userNickname}`);
-            post.userNickname = userNickname; // 포스트 데이터에 사용자의 닉네임 추가
-        } catch (nicknameError) {
+            const userNickname = nicknameResponse.data; // 필요한 경우 구조에서 닉네임 추출
+            userNicknameCache[userId] = userNickname; // 캐시에 저장
+            post.userNickname = userNickname;
+          } catch (nicknameError) {
             console.error(`사용자 ${userId}의 닉네임을 불러오는 중 오류 발생:`, nicknameError);
+            post.userNickname = `User ${userId}`; // 기본 닉네임 설정
           }
         }
-      setPosts(response.data);
+      }
+  
+      setPosts(postsData);
     } catch (error) {
       console.error("Error loading posts: ", error);
     }
   };
+  
+    
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -218,105 +228,108 @@ const handleDeleteComment = async (commentId, postId) => {
     // Save 버튼 클릭 시 처리할 로직
   };
 
-  const renderPosts = ({ item: post }) => (
-    <View key={post.id} style={styles.postContainer}>
-      <View style={styles.profileRow}>
-        <View style={styles.profileImageContainer}>
-          <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
-          <Text style={styles.username}>{post.userNickname}</Text>
-        </View>
-        <View style={styles.buttonRow}>
-          <Button title="수정" onPress={() => {
-            setIsEditing(post.id);
-            setEditingTitle(post.title);
-            setEditingContent(post.content);
-            setEditingImageURI(post.image_url);
-          }} />
-          <Button title="삭제" onPress={() => handleDeletePost(post.id)} />
-        </View>
-      </View>
-      <Image style={styles.postImage} source={{ uri: `${BASE_URL}${post.imageUrl}` }} />
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
-          <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleChat(post.id)} style={styles.buttonContainer}>
-          <Image style={styles.buttonImage} source={require('../assets/home_chat.png')} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDirect(post.id)} style={styles.buttonContainer}>
-          <Image style={styles.buttonImage} source={require('../assets/home_direct.png')} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleSave(post.id)} style={[styles.buttonContainer, styles.lastButton]}>
-          <Image style={styles.buttonImage} source={require('../assets/home_save.png')} />
-        </TouchableOpacity>
-      </View>
-
-      {isEditing === post.id ? (
-        <View>
-          <TextInput
-            style={styles.input}
-            value={editingTitle}
-            onChangeText={setEditingTitle}
-            placeholder="사용자를 입력하세요"
-          />
-          <TextInput
-            style={styles.input}
-            value={editingContent}
-            onChangeText={setEditingContent}
-            placeholder="내용을 입력하세요"
-            multiline={true}
-            numberOfLines={4}
-          />
-          <TouchableOpacity onPress={() => pickImage(setEditingImageURI)}>
-            {editingImageURI ? (
-              <Image source={{ uri: editingImageURI }} style={styles.image} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <MaterialIcons name="add-a-photo" size={50} color="gray" />
-              </View>
-            )}
-          </TouchableOpacity>
-          <Button title="수정 완료" onPress={() => handleEditPost(post.id)} />
-        </View>
-      ) : (
-        <View>
-          <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
-          <Text style={styles.postText}>
-            <Text style={styles.username}>{post.title}</Text> {post.content}
-          </Text>
-        </View>
-      )}
-
-      {comments[post.id] && comments[post.id].showComments && (
-        <View style={styles.commentContainer}>
-          {(comments[post.id].comments && comments[post.id].comments.length > 0) ? (
-            comments[post.id].comments.map((comment, index) => (
-              <View key={index} style={styles.commentItem}>
-                <Text>{comment.comment_content}</Text>
-                <TouchableOpacity onPress={() => handleDeleteComment(comment.comment_id, post.id)} style={styles.deleteButton}>
-                  <Text style={styles.deleteButtonText}>삭제</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          ) : (
-            <Text>댓글이 없습니다.</Text>
-          )}
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              value={commentText}
-              onChangeText={(text) => setCommentText(text)}
-              placeholder="댓글을 작성하세요..."
-              onSubmitEditing={() => handleCommentSubmit(post.id)}
-            />
-            <TouchableOpacity onPress={() => handleCommentSubmit(post.id)} style={styles.submitButton}>
-              <Text style={styles.submitButtonText}>게시</Text>
-            </TouchableOpacity>
+  const renderPosts = ({ item: post }) => {
+    console.log(post); // 각 게시글 데이터를 출력하여 확인
+    return (
+      <View key={post.id} style={styles.postContainer}>
+        <View style={styles.profileRow}>
+          <View style={styles.profileImageContainer}>
+            <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
+            <Text style={styles.username}>{post.userNickname}</Text>
+          </View>
+          <View style={styles.buttonRow}>
+            <Button title="수정" onPress={() => {
+              setIsEditing(post.id);
+              setEditingTitle(post.title);
+              setEditingContent(post.content);
+              setEditingImageURI(post.image_url);
+            }} />
+            <Button title="삭제" onPress={() => handleDeletePost(post.id)} />
           </View>
         </View>
-      )}
-    </View>
-  );
+        <Image style={styles.postImage} source={{ uri: `${BASE_URL}${post.imageUrl}` }} />
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
+            <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleChat(post.id)} style={styles.buttonContainer}>
+            <Image style={styles.buttonImage} source={require('../assets/home_chat.png')} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDirect(post.id)} style={styles.buttonContainer}>
+            <Image style={styles.buttonImage} source={require('../assets/home_direct.png')} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleSave(post.id)} style={[styles.buttonContainer, styles.lastButton]}>
+            <Image style={styles.buttonImage} source={require('../assets/home_save.png')} />
+          </TouchableOpacity>
+        </View>
+  
+        {isEditing === post.id ? (
+          <View>
+            <TextInput
+              style={styles.input}
+              value={editingTitle}
+              onChangeText={setEditingTitle}
+              placeholder="사용자를 입력하세요"
+            />
+            <TextInput
+              style={styles.input}
+              value={editingContent}
+              onChangeText={setEditingContent}
+              placeholder="내용을 입력하세요"
+              multiline={true}
+              numberOfLines={4}
+            />
+            <TouchableOpacity onPress={() => pickImage(setEditingImageURI)}>
+              {editingImageURI ? (
+                <Image source={{ uri: editingImageURI }} style={styles.image} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <MaterialIcons name="add-a-photo" size={50} color="gray" />
+                </View>
+              )}
+            </TouchableOpacity>
+            <Button title="수정 완료" onPress={() => handleEditPost(post.id)} />
+          </View>
+        ) : (
+          <View>
+            <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
+            <Text style={styles.postText}>
+              <Text style={styles.username}>{post.title}</Text> {post.content}
+            </Text>
+          </View>
+        )}
+  
+        {comments[post.id] && comments[post.id].showComments && (
+          <View style={styles.commentContainer}>
+            {(comments[post.id].comments && comments[post.id].comments.length > 0) ? (
+              comments[post.id].comments.map((comment, index) => (
+                <View key={index} style={styles.commentItem}>
+                  <Text>{comment.comment_content}</Text>
+                  <TouchableOpacity onPress={() => handleDeleteComment(comment.comment_id, post.id)} style={styles.deleteButton}>
+                    <Text style={styles.deleteButtonText}>삭제</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <Text>댓글이 없습니다.</Text>
+            )}
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                value={commentText}
+                onChangeText={(text) => setCommentText(text)}
+                placeholder="댓글을 작성하세요..."
+                onSubmitEditing={() => handleCommentSubmit(post.id)}
+              />
+              <TouchableOpacity onPress={() => handleCommentSubmit(post.id)} style={styles.submitButton}>
+                <Text style={styles.submitButtonText}>게시</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };  
 
   return (
     <FlatList
