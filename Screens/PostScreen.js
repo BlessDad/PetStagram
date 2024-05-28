@@ -53,7 +53,7 @@ export default function App() {
   };
 
   const handleAddPost = async () => {
-    const userId = 2; // 가정한 사용자 ID
+    const userId = 3; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       let imageUrl = null;
       if (imageURI) {
