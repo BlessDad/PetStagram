@@ -7,8 +7,8 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-const BASE_URL = 'http://3.35.26.234:8080';
-//const BASE_URL = 'http://52.78.86.212:8080';
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function App() {
   const [title, setTitle] = useState('');

@@ -4,8 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import axios from 'axios';
 
-const BASE_URL = 'http://3.35.26.234:8080';
-//const BASE_URL = 'http://52.78.86.212:8080';
+//const BASE_URL = 'http://3.35.26.234:8080';
+const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function DiaryScreen() {
   const [selectedDate, setSelectedDate] = React.useState('');
@@ -38,24 +38,40 @@ export default function DiaryScreen() {
         <Calendar
           onDayPress={onDayPress}
           markedDates={{
-            [selectedDate]: { selected: true, selectedColor: 'red' },
+            [selectedDate]: { selected: true, selectedColor: '#e49d33' },
           }}
         />
       </View>
       <FlatList
-        data={walkings}
-        renderItem={({ item }) => (
-          <View style={styles.walkingItem}>
-            <Text>Start Time: {item.walking_start}</Text>
-            <Text>End Time: {item.walking_end}</Text>
-            <Text>Distance: {item.walking_distance} meters</Text>
-            <Text>Calories: {item.walking_calorie} kcal</Text>
-            <Image style={styles.walkingImage}source={{uri: `${BASE_URL}${item.imageUrl}` }} />
-            {console.log(BASE_URL+item.imageUrl)}
-          </View> 
-        )}
-        keyExtractor={(item) => item.walking_id.toString()}
-      />
+  data={walkings}
+  style={styles.flatList}
+  renderItem={({ item }) => {
+    // 시작 시간과 종료 시간을 JavaScript Date 객체로 변환
+    const startTime = new Date(item.walking_start);
+    const endTime = new Date(item.walking_end);
+
+    // 산책 시간 계산 (종료 시간 - 시작 시간)
+    const walkingTime = endTime - startTime;
+
+    // 산책 시간을 포맷에 맞게 변환 (시:분:초)
+    const walkingHours = Math.floor((walkingTime / (1000 * 60 * 60)) % 24);
+    const walkingMinutes = Math.floor((walkingTime / (1000 * 60)) % 60);
+    const walkingSeconds = Math.floor((walkingTime / 1000) % 60);
+
+    return (
+      <View style={styles.walkingItem}>
+        <Image style={styles.walkingImage} source={{ uri: `${BASE_URL}${item.imageUrl}` }} />
+        <View style={styles.walkingDetails}>
+        <Text style={styles.DateText}>{selectedDate.substring(0, 4)}년 {selectedDate.substring(5, 7)}월 {selectedDate.substring(8, 10)}일</Text>
+          <Text>산책 시간: {walkingHours}시간 {walkingMinutes}분 {walkingSeconds}초</Text>
+          <Text>거리: {item.walking_distance} meters</Text>
+          <Text>칼로리: {item.walking_calorie} kcal</Text>
+        </View>
+      </View>
+    );
+  }}
+  keyExtractor={(item) => item.walking_id.toString()}
+/>
       <TouchableOpacity 
         style={styles.addButton}
         onPress={handlePress}>
@@ -76,8 +92,22 @@ const styles = StyleSheet.create({
     marginTop: 0,
     width: '100%',
   },
+  flatList: {
+    width: '100%', // Adjust this to change the width of the FlatList
+  },
+  DateText:{
+    fontSize: 18
+  },
   walkingItem: {
+    flexDirection: 'row',
     padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    alignItems: 'center',
+  },
+  walkingDetails: {
+    flex: 1,
+    paddingLeft: 10,
   },
   addButton: {
     position: 'absolute', 
@@ -106,7 +136,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   walkingImage: {
-    width: '100%',
-    height: 500,
+    width: 150,
+    height: 150,
   }
 });
