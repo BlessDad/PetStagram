@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, View, TouchableOpacity, Platform, FlatList, StyleSheet } from 'react-native';
+import { Text, View, TouchableOpacity, Platform, FlatList, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import axios from 'axios';
@@ -50,7 +50,9 @@ export default function DiaryScreen() {
             <Text>End Time: {item.walking_end}</Text>
             <Text>Distance: {item.walking_distance} meters</Text>
             <Text>Calories: {item.walking_calorie} kcal</Text>
-          </View>
+            <Image style={styles.walkingImage}source={{uri: `${BASE_URL}${item.imageUrl}` }} />
+            {console.log(BASE_URL+item.imageUrl)}
+          </View> 
         )}
         keyExtractor={(item) => item.walking_id.toString()}
       />
@@ -103,4 +105,8 @@ const styles = StyleSheet.create({
     color: 'black', 
     fontSize: 24,
   },
+  walkingImage: {
+    width: '100%',
+    height: 500,
+  }
 });

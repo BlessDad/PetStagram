@@ -45,7 +45,6 @@ export default function HomeScreen() {
           }
         }
       }
-  
       setPosts(postsData);
     } catch (error) {
       console.error("Error loading posts: ", error);
@@ -249,6 +248,7 @@ const handleDeleteComment = async (commentId, postId) => {
           </View>
         </View>
         <Image style={styles.postImage} source={{ uri: `${BASE_URL}${post.imageUrl}` }} />
+        {console.log(`${BASE_URL}${post.imageUrl}`)}
         <View style={styles.buttonsContainer}>
           <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.buttonContainer}>
             <Image style={styles.buttonImage} source={require('../assets/home_like.png')} />
