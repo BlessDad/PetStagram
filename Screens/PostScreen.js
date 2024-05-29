@@ -21,6 +21,7 @@ export default function App() {
   const [model, setModel] = useState(null);
   const [image, setImage] = useState(null);
   const [classification, setClassification] = useState('');
+  const [breed, setBreed] = useState('');
 
   useEffect(() => {
     async function loadModel() {
@@ -52,7 +53,8 @@ export default function App() {
 
   const pickImage = async (setImageCallback) => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.
+      Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -78,7 +80,7 @@ export default function App() {
       type: 'image/jpeg', 
       name: fileName,
     });
-  
+    
     try {
       const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
         headers: {
@@ -97,7 +99,7 @@ export default function App() {
   
 
   const handleAddPost = async () => {
-    const userId = 3; // 가정한 사용자 ID
+    const userId = 5; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       let imageUrl = null;
       if (imageURI) {
@@ -106,13 +108,23 @@ export default function App() {
         console.log('Image URL:', imageURI); // 이미지 URL 로그 출력
       }
       try {
-        await axios.post(`${BASE_URL}/api/insert/${userId}`, {
+        const response = await axios.post(`${BASE_URL}/api/insert/${userId}`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
         });
+
+        const postId = response.data;
+        console.log("post_id : " + postId + ", user_id : " + userId);
+        await axios.post(`${BASE_URL}/tag/insert/${postId}`, {
+          tag_name : classification,
+          post_id : userId
+        });
+
         setTitle('');
         setContent('');
+        setBreed('');
+        setClassification('');
         setImageURI(null);
         Alert.alert('게시물 추가 성공', '게시물이 성공적으로 추가되었습니다.');
       } 
@@ -162,6 +174,7 @@ export default function App() {
         <Ionicons name="paw" size={24} />
         <TextInput
           style={styles.input}
+          onChangeText={setBreed}
           placeholder={`#${classification || '견종'}`}
           placeholderTextColor={classification ? 'black' : 'lightgray'}
         />
