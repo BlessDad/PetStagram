@@ -67,6 +67,7 @@ export default function MapScreen() {
         bookmark_name: placeDetails.name,
         bookmark_id: placeId,
       }]);
+      fetchFavoritedPlaces();
 
       console.log('즐겨찾기에 추가된 장소:', placeDetails);
     } catch (error) {
@@ -190,6 +191,7 @@ export default function MapScreen() {
                   <Text>{item.bookmark_address}</Text>
                 </View>
                 <TouchableOpacity onPress={() => removeFromFavorites(item.bookmark_id)}>
+                  {console.log(item)}
                   <Text>삭제</Text>
                 </TouchableOpacity>
               </View>
