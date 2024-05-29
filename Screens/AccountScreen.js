@@ -1,21 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, View, Image, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
+const BASE_URL = 'http://3.35.26.234:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
+
 export default function AccountScreen({ navigation }) {
   const [images, setImages] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userData, setUserData] = useState({
+    user_nickname: '',
+    pet_name: '',
+    pet_age: 0,
+    user_introduce: '',
+    user_follower_count: 0,
+    user_following_count: 0,
+    user_post_count: 0,
+  });
 
   useEffect(() => {
-    fetchImages();
+    fetchUserData();
   }, []);
 
-  const fetchImages = async () => {
+  useEffect(() => {
+    console.log('회원 데이터 로드 성공');
+    console.log(userData);
+  }, [userData]);
+
+  const fetchUserData = async () => {
     try {
-      const response = await axios.get('http://http://52.78.86.212:8080/api/getPost');
-      setImages(response.data);
+      const userId = 3; // 임의로 설정한 userId
+      const userResponse = await axios.get(`${BASE_URL}/user/getUser/${userId}`);
+      const user = userResponse.data[0]; // 첫 번째 요소를 사용
+      setUserData(user);
+
+      const postsResponse = await axios.get(`${BASE_URL}/api/getPost`);
+      const userPosts = postsResponse.data.filter(post => post.user_id === userId);
+      setImages(userPosts); // 사용자 데이터에서 posts 배열을 추출하여 설정
     } catch (error) {
-      console.error('Error loading images: ', error);
+      console.error('Error loading user data: ', error);
     }
   };
 
@@ -24,20 +48,25 @@ export default function AccountScreen({ navigation }) {
       id: image.id,
       title: image.title,
       content: image.content,
-      image_url: image.image_url,
+      image_url: image.imageUrl,
     });
   };
 
   const renderImageRows = () => {
     const imageRows = [];
     let currentRow = [];
-
+  
     images.forEach((image, index) => {
+      const imageUrl = `${BASE_URL}${image.imageUrl}`;
+      console.log(`Loading image: ${imageUrl}`);
+  
       currentRow.push(
         <TouchableOpacity key={index} onPress={() => handleImagePress(image)} style={styles.touchable}>
           <Image
             style={styles.image}
-            source={{ uri: image.image_url }}
+            source={{ uri: imageUrl }}
+            onLoad={() => console.log(`Image loaded: ${imageUrl}`)}
+            onError={(error) => console.error(`Error loading image: ${imageUrl}`, error)}
           />
         </TouchableOpacity>
       );
@@ -54,12 +83,20 @@ export default function AccountScreen({ navigation }) {
         currentRow = [];
       }
     });
-
     return imageRows;
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchUserData();
+    setRefreshing(false);
+  };
+
   return (
-    <ScrollView style={[{ backgroundColor: '#FFFFFF' }, { flex: 1 }]}>
+    <ScrollView
+      style={[{ backgroundColor: '#FFFFFF' }, { flex: 1 }]}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.container}>
         <View style={styles.profileContainer}>
           <Image
@@ -68,9 +105,9 @@ export default function AccountScreen({ navigation }) {
           />
           <View style={styles.userInfo}>
             <View style={styles.statsContainer}>
-              <Text style={styles.stats}>4</Text>
-              <Text style={styles.stats}>100</Text>
-              <Text style={styles.stats}>50</Text>
+              <Text style={styles.stats}>{userData.user_post_count}</Text>
+              <Text style={styles.stats}>{userData.user_follower_count}</Text>
+              <Text style={styles.stats}>{userData.user_following_count}</Text>
             </View>
             <View style={styles.stats2Container}>
               <Text style={styles.stats2}>게시물</Text>
@@ -81,9 +118,9 @@ export default function AccountScreen({ navigation }) {
         </View>
         <View style={styles.introContainer}>
           <Text style={styles.introText}>
-            이름: Tom {"\n"}
-            나이: 3살 {"\n"}
-            1년마다 무럭무럭 자라는 모습을 보여드리고 싶어요!
+            이름: {userData.pet_name} {"\n"}
+            나이: {userData.pet_age}살 {"\n"}
+            소개: {userData.user_introduce}
           </Text>
         </View>
       </View>

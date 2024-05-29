@@ -1,32 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, Button, Image, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
 import axios from 'axios';
 import FormData from 'form-data';
 import * as ImagePicker from 'expo-image-picker';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { fetch, decodeJpeg } from '@tensorflow/tfjs-react-native';
+import * as mobilenet from '@tensorflow-models/mobilenet';
+import * as tf from '@tensorflow/tfjs';
+import * as ImageManipulator from 'expo-image-manipulator';
+
+
+const { width } = Dimensions.get('window');
+
+const BASE_URL = 'http://192.168.0.25:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function App() {
-  const [posts, setPosts] = useState([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [imageURI, setImageURI] = useState(null);
-  const [isEditing, setIsEditing] = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
-  const [editingContent, setEditingContent] = useState('');
-  const [editingImageURI, setEditingImageURI] = useState(null);
-
-  const fetchPosts = async () => {
-    try {
-      const response = await axios.get('http://52.78.86.212:8080/api/getPost');
-      setPosts(response.data);
-    } catch (error) {
-      console.error("Error loading posts: ", error);
-    }
-  };
+  const [model, setModel] = useState(null);
+  const [image, setImage] = useState(null);
+  const [classification, setClassification] = useState('');
 
   useEffect(() => {
-    fetchPosts();
+    async function loadModel() {
+      try {
+        await tf.ready();
+        const model = await mobilenet.load();
+        setModel(model);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    loadModel();
   }, []);
+
+  const classifyImage = async () => {
+    try {
+      const response = await fetch(image, {}, { isBinary: true });
+      const imageData = await response.arrayBuffer();
+      const imageTensor = decodeJpeg(new Uint8Array(imageData));
+      const predictions = await model.classify(imageTensor);
+      setClassification(predictions[0].className);
+      setClassification(predictions[0].className.charAt(0).toUpperCase() + predictions[0].className.slice(1));
+      console.log(predictions);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const pickImage = async (setImageCallback) => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -37,61 +59,64 @@ export default function App() {
     });
   
     if (!result.cancelled && result.assets.length > 0 && result.assets[0].uri) {
-      console.log("uri? " + result.assets[0].uri)
       setImageCallback(result.assets[0].uri);
       setImageURI(result.assets[0].uri);
+
+      const manipResult = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri, 
+        [{resize: {width: 224, height: 224}}],
+        {compress: 1, format: ImageManipulator.SaveFormat.JPEG}
+      );
+      setImage(manipResult.uri);
     }
   };
+
   const uploadImage = async (uri, fileName) => {
     const formData = new FormData();
     formData.append('image', {
       uri,
-      type: 'image/jpeg', // 이미지 타입 (필요에 따라 수정)
-      name: fileName, // 이미지 이름 (필요에 따라 수정)
+      type: 'image/jpeg', 
+      name: fileName,
     });
   
     try {
-      const response = await axios.post('http://52.78.86.212:8080/api/upload', formData, {
+      const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Uploaded Image Uri: ' + response.data); // 서버 응답 로그 출력
-      // console.log('Uploaded Image URL:', response.assests[0].imageUrl); // 서버 응답 로그 출력
-      console.log(uri);
+      console.log('Uploaded Image Uri (1): ' + response.data); // 서버 응답 로그 출력
+      //return response.data.imageUrl;
       return response.data;
-      
     } catch (error) {
       console.error('Image upload failed: ', error);
       return null;
     }
   };
 
+  
 
   const handleAddPost = async () => {
-    const userId = 2; // 가정한 사용자 ID
+    const userId = 3; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
+      let imageUrl = null;
       if (imageURI) {
         const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
         imageUrl = await uploadImage(imageURI, fileName);
         console.log('Image URL:', imageURI); // 이미지 URL 로그 출력
       }
-
-
       try {
-        const response = await axios.post(`http://52.78.86.212:8080/api/insert/${userId}`, {
+        await axios.post(`${BASE_URL}/api/insert/${userId}`, {
           title: title,
           content: content,
           imageUrl: imageUrl, // 이미지 URL을 포함하여 요청 전송
         });
-        
-        console.log('Server Response:', response.data); // 서버 응답 로그 출력
-
         setTitle('');
         setContent('');
         setImageURI(null);
-        fetchPosts();
-      } catch (error) {
+        Alert.alert('게시물 추가 성공', '게시물이 성공적으로 추가되었습니다.');
+      } 
+      catch (error) {
         if (error.response) {
           console.error('Error adding post: ', error.response.data); // 서버 응답이 있는 경우
         } else {
@@ -100,116 +125,61 @@ export default function App() {
       }
     }
   };
-  
 
-  const handleDeletePost = async (id) => {
-    try {
-      await axios.delete(`http://52.78.86.212:8080/api/deletePost/${id}`);
-      fetchPosts();
-      Alert.alert('게시물 삭제 성공', '게시물이 성공적으로 삭제되었습니다.');
-    } catch (error) {
-      console.error('게시물 삭제 실패:', error);
-      Alert.alert('게시물 삭제 실패', '게시물 삭제 중 오류가 발생했습니다.');
-    }
-  };
-
-  const handleEditPost = async (id) => {
-    let imageUrl = editingImageURI;
-    if (editingImageURI && editingImageURI !== posts.find(post => post.id === id).image_url) {
-      const fileName = `${editingTitle.replace(/\s+/g, '_')}.jpg`; 
-      imageUrl = await uploadImage(editingImageURI, fileName);
-    }
-
-    try {
-      await axios.put(`http://52.78.86.212:8080/api/updatePost/${id}`, {
-        title: editingTitle,
-        content: editingContent,
-        imageUrl: imageUrl,
-      });
-      fetchPosts();
-      setIsEditing(null); // 수정 완료 후 상태 초기화
-      Alert.alert('게시물 수정 성공', '게시물이 성공적으로 수정되었습니다.');
-      setEditingTitle(''); // 수정 완료 후 입력 필드 초기화
-      setEditingContent(''); 
-      setEditingImageURI(null); 
-      setImageURI(null);
-    } catch (error) {
-      console.error('게시물 수정 실패:', error);
-      Alert.alert('게시물 수정 실패', '게시물 수정 중 오류가 발생했습니다.');
-    }
-  };
-
-  
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>게시글 목록</Text>
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => (
-          <View style={styles.postItem}>
-            {isEditing == item.id ? (
-              <View>
-                <TextInput
-                style = {styles.input}
-                value = {editingTitle}
-                onChangeText = {setEditingTitle}
-                placeholder = "제목을 입력하세요"
-                />
-                 <TextInput
-                  style={styles.input}
-                  value={editingContent}
-                  onChangeText={setEditingContent}
-                  placeholder="내용을 입력하세요"
-                  multiline={true}
-                  numberOfLines={4}
-                />
-                <Button title="수정 완료" onPress={() => handleEditPost(item.id)} />
-                </View>
-            ) : (
-              <View>
-            <Text>제목: {item.title}</Text>
-            <Text>내용: {item.content}</Text>
-            {item.imageUrl && (
-                  <Image source={{ uri: `http://52.78.86.212:8080${item.imageUrl}` }} style={styles.image} />
-                )}
-            <View style={styles.buttonContainer}>
-              <Button title="수정" onPress={() => setIsEditing(item.id)} />
-              <Button title="삭제" onPress={() => handleDeletePost(item.id)} />
-            </View>
+      <Text style={styles.title}>새 게시글</Text>
+      <TouchableOpacity onPress={() => pickImage(setImageURI)}>
+        {imageURI ? (
+          <Image source={{ uri: imageURI }} style={styles.image} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <MaterialIcons name="add-a-photo" size={50} color="gray" />
           </View>
         )}
+      </TouchableOpacity>
+      <View style={styles.inputContainer}>
+        <Ionicons name="person" size={24} />
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="제목을 입력하세요"
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="book" size={24} />
+        <TextInput
+          style={styles.input}
+          value={content}
+          onChangeText={setContent}
+          placeholder="내용을 입력하세요"
+          multiline={true}
+          numberOfLines={4}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="paw" size={24} />
+        <TextInput
+          style={styles.input}
+          placeholder={`#${classification || '견종'}`}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="happy" size={24} />
+        <TextInput
+          style={styles.input}
+          placeholder="#감정"
+        />
+      </View>
+      <View style={styles.buttonWrapper}>
+        <View style={styles.buttonContainer}>
+          <Button title="분석하기" onPress={classifyImage} />
         </View>
-        )}
-        keyExtractor={(item) => item.id.toString()}
-      />
-      {isEditing === null && (
-        <View>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="제목을 입력하세요"
-          />
-          <TextInput
-            style={styles.input}
-            value={content}
-            onChangeText={setContent}
-            placeholder="내용을 입력하세요"
-            multiline={true}
-            numberOfLines={4}
-          />
-          <TouchableOpacity onPress={() => pickImage(setImageURI)}>
-            {imageURI ? (
-              <Image source={{ uri: imageURI }} style={styles.image} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <MaterialIcons name="add-a-photo" size={50} color="gray" />
-              </View>
-            )}
-          </TouchableOpacity>
+        <View style={styles.buttonContainer}>
           <Button title="추가하기" onPress={handleAddPost} />
         </View>
-      )}
+      </View>
     </View>
   );
 }
@@ -217,49 +187,55 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 15,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 5,
+    textAlign: 'center',
   },
-  postItem: {
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-  },
-  buttonContainer: {
+  inputContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 10,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'lightgray',
+    marginBottom: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    flex: 1,
+    fontSize: 15,
   },
   imagePlaceholder: {
-    width: 200,
-    height: 200,
+    width: width * 0.70,
+    height: width * 0.70,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'gray',
-    marginTop: 10,
+    marginTop: 5,
     marginBottom: 10,
+    alignSelf: 'center',
   },
   image: {
-    width: 200,
-    height: 200,
+    width: width * 0.70,
+    height: width * 0.70,
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10,
+    alignSelf: 'center',
+  },
+  buttonWrapper: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  buttonContainer: {
     marginBottom: 10,
   },
 });
