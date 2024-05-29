@@ -9,10 +9,9 @@ import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as tf from '@tensorflow/tfjs';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-
 const { width } = Dimensions.get('window');
 
-const BASE_URL = 'http://192.168.0.25:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
 //const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function App() {
@@ -38,6 +37,7 @@ export default function App() {
 
   const classifyImage = async () => {
     try {
+      if(!model) console.log('model is loading...');
       const response = await fetch(image, {}, { isBinary: true });
       const imageData = await response.arrayBuffer();
       const imageTensor = decodeJpeg(new Uint8Array(imageData));
@@ -163,6 +163,7 @@ export default function App() {
         <TextInput
           style={styles.input}
           placeholder={`#${classification || '견종'}`}
+          placeholderTextColor={classification ? 'black' : 'lightgray'}
         />
       </View>
       <View style={styles.inputContainer}>
