@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Image, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, TextInput, Button, Image, TouchableOpacity, StyleSheet, Alert, Dimensions, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import axios from 'axios';
 import FormData from 'form-data';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,7 +22,7 @@ export default function App() {
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (!result.cancelled && result.assets.length > 0 && result.assets[0].uri) {
       setImageCallback(result.assets[0].uri);
       setImageURI(result.assets[0].uri);
@@ -33,10 +33,10 @@ export default function App() {
     const formData = new FormData();
     formData.append('image', {
       uri,
-      type: 'image/jpeg', 
+      type: 'image/jpeg',
       name: fileName,
     });
-  
+
     try {
       const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
         headers: {
@@ -44,7 +44,6 @@ export default function App() {
         },
       });
       console.log('Uploaded Image Uri (1): ' + response.data); // 서버 응답 로그 출력
-      //return response.data.imageUrl;
       return response.data;
     } catch (error) {
       console.error('Image upload failed: ', error);
@@ -53,11 +52,11 @@ export default function App() {
   };
 
   const handleAddPost = async () => {
-    const userId = 2; // 가정한 사용자 ID
+    const userId = 3; // 가정한 사용자 ID
     if (title.trim() !== '' && content.trim() !== '') {
       let imageUrl = null;
       if (imageURI) {
-        const fileName = `${title.replace(/\s+/g, '_')}.jpg`; 
+        const fileName = `${title.replace(/\s+/g, '_')}.jpg`;
         imageUrl = await uploadImage(imageURI, fileName);
         console.log('Image URL:', imageURI); // 이미지 URL 로그 출력
       }
@@ -71,8 +70,7 @@ export default function App() {
         setContent('');
         setImageURI(null);
         Alert.alert('게시물 추가 성공', '게시물이 성공적으로 추가되었습니다.');
-      } 
-      catch (error) {
+      } catch (error) {
         if (error.response) {
           console.error('Error adding post: ', error.response.data); // 서버 응답이 있는 경우
         } else {
@@ -83,60 +81,70 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>새 게시글</Text>
-      <TouchableOpacity onPress={() => pickImage(setImageURI)}>
-        {imageURI ? (
-          <Image source={{ uri: imageURI }} style={styles.image} />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <MaterialIcons name="add-a-photo" size={50} color="gray" />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>새 게시글</Text>
+        <TouchableOpacity onPress={() => pickImage(setImageURI)}>
+          {imageURI ? (
+            <Image source={{ uri: imageURI }} style={styles.image} />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <MaterialIcons name="add-a-photo" size={50} color="gray" />
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="person" size={24} />
+            <TextInput
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="사용자를 입력하세요"
+            />
           </View>
-        )}
-      </TouchableOpacity>
-      <View style={styles.inputContainer}>
-        <Ionicons name="person" size={24} />
-        <TextInput
-          style={styles.input}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="제목을 입력하세요"
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Ionicons name="book" size={24} />
-        <TextInput
-          style={styles.input}
-          value={content}
-          onChangeText={setContent}
-          placeholder="내용을 입력하세요"
-          multiline={true}
-          numberOfLines={4}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Ionicons name="paw" size={24} />
-        <TextInput
-          style={styles.input}
-          placeholder="#견종"
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Ionicons name="happy" size={24} />
-        <TextInput
-          style={styles.input}
-          placeholder="#감정"
-        />
-      </View>
-      <View style={styles.buttonWrapper}>
-        <View style={styles.buttonContainer}>
-          <Button title="분석하기" onPress={() => Alert.alert('분석하기 버튼 눌림')} />
-        </View>
-        <View style={styles.buttonContainer}>
-          <Button title="추가하기" onPress={handleAddPost} />
+        </TouchableWithoutFeedback>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="book" size={24} />
+            <TextInput
+              style={styles.input}
+              value={content}
+              onChangeText={setContent}
+              placeholder="내용을 입력하세요"
+              multiline={true}
+              numberOfLines={4}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="paw" size={24} />
+            <TextInput
+              style={styles.input}
+              placeholder="#견종"
+            />
+          </View>
+        </TouchableWithoutFeedback>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="happy" size={24} />
+            <TextInput
+              style={styles.input}
+              placeholder="#감정"
+            />
+          </View>
+        </TouchableWithoutFeedback>
+        <View style={styles.buttonWrapper}>
+          <View style={styles.buttonContainer}>
+            <Button title="분석하기" onPress={() => Alert.alert('분석하기 버튼 눌림')} />
+          </View>
+          <View style={styles.buttonContainer}>
+            <Button title="추가하기" onPress={handleAddPost} />
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 

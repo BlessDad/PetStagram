@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import axios from 'axios';
 
-//const BASE_URL = 'http://3.35.26.234:8080';
-const BASE_URL = 'http://52.78.86.212:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function PostDetailScreen({ route }) {
   const { id, title, image_url, content } = route.params;

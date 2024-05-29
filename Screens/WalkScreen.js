@@ -6,9 +6,10 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { image } from '@tensorflow/tfjs';
 
-//const BASE_URL = 'http://3.35.26.234:8080';
-const BASE_URL = 'http://52.78.86.212:8080';
+const BASE_URL = 'http://3.35.26.234:8080';
+//const BASE_URL = 'http://52.78.86.212:8080';
 
 export default function WalkScreen() {
   const [location, setLocation] = useState(null);
@@ -105,65 +106,37 @@ export default function WalkScreen() {
     setIsRunning(prev => !prev);
   };
 
-  const handleStop = async () => {
-    const endWalkingTime = new Date();
-    setEndWalking(endWalkingTime);
+const handleStop = async () => {
+  const endWalkingTime = new Date();
+  setEndWalking(endWalkingTime);
 
-    if (startWalking && endWalkingTime) {
-      const startYear = startWalking.getFullYear().toString();
-      const startMonth = startWalking.getMonth() + 1;
-      const startDate = startWalking.getDate();
-      const startHour = startWalking.getHours();
-      const startMinute = startWalking.getMinutes();
-      const startSecond = startWalking.getSeconds();
+  if (startWalking && endWalkingTime) {
+    const startYear = startWalking.getFullYear().toString();
+    const startMonth = startWalking.getMonth() + 1;
+    const startDate = startWalking.getDate();
+    const startHour = startWalking.getHours();
+    const startMinute = startWalking.getMinutes();
+    const startSecond = startWalking.getSeconds();
 
-      const DBStart = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDate).padStart(2, '0')}T${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:${String(startSecond).padStart(2, '0')}`;
+    const DBStart = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDate).padStart(2, '0')}T${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}:${String(startSecond).padStart(2, '0')}`;
 
-      const endYear = endWalkingTime.getFullYear().toString();
-      const endMonth = endWalkingTime.getMonth() + 1;
-      const endDate = endWalkingTime.getDate();
-      const endHour = endWalkingTime.getHours();
-      const endMinute = endWalkingTime.getMinutes();
-      const endSecond = endWalkingTime.getSeconds();
+    const endYear = endWalkingTime.getFullYear().toString();
+    const endMonth = endWalkingTime.getMonth() + 1;
+    const endDate = endWalkingTime.getDate();
+    const endHour = endWalkingTime.getHours();
+    const endMinute = endWalkingTime.getMinutes();
+    const endSecond = endWalkingTime.getSeconds();
 
-      const DBEnd = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDate).padStart(2, '0')}T${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}:${String(endSecond).padStart(2, '0')}`;
+    const DBEnd = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDate).padStart(2, '0')}T${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}:${String(endSecond).padStart(2, '0')}`;
 
-      const walkDuration = (endWalkingTime - startWalking) / 1000; // Duration in seconds
-      const hours = Math.floor(walkDuration / 3600);
-      const minutes = Math.floor((walkDuration % 3600) / 60);
-      const seconds = Math.floor(walkDuration % 60);
+    const walkDuration = (endWalkingTime - startWalking) / 1000; // Duration in seconds
+    const hours = Math.floor(walkDuration / 3600);
+    const minutes = Math.floor((walkDuration % 3600) / 60);
+    const seconds = Math.floor(walkDuration % 60);
 
-      const totalWalkingTime = seconds + minutes * 60 + hours * 60 * 60;
+    const totalWalkingTime = seconds + minutes * 60 + hours * 60 * 60;
 
-      console.log(`산책 정보:\n\n시작 시간: ${DBStart}\n종료 시간: ${DBEnd}\n거리: ${totalDistance.toFixed(2)} meters\n칼로리: ${calories.toFixed(2)} kcal\n산책 시간 : ${hours}시간 ${minutes}분 ${seconds}초 \n    산책 시간 (초) : ${totalWalkingTime}`);
-
-
-      try {
-        const userId = 2; // Replace with actual user id
-        await axios.post(`${BASE_URL}/walking/insert/${userId}`, {
-          walking_start: DBStart,
-          walking_end: DBEnd,
-          walking_distance: parseFloat(totalDistance.toFixed(2)),
-          walking_calorie: parseInt(calories.toFixed(2)),
-          walking_speed: parseFloat(totalDistance / totalWalkingTime),
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json', // Content-Type 헤더를 JSON으로 설정
-          },
-        });
-        console.log("Walk data saved successfully");
-      } 
-      catch (error) {
-        if (error.response) {
-          console.error('Error adding walking: ', error); // 서버 응답이 있는 경우
-        } else {
-          console.error('Error adding walking: ', error); // 서버 응답이 없는 경우
-        }
-      }
-    } else {
-      console.warn("시작 시간 또는 종료 시간이 없습니다.");
-    }
+    console.log(`산책 정보:\n\n시작 시간: ${DBStart}\n종료 시간: ${DBEnd}\n거리: ${totalDistance.toFixed(2)} meters\n칼로리: ${calories.toFixed(2)} kcal\n산책 시간 : ${hours}시간 ${minutes}분 ${seconds}초 \n    산책 시간 (초) : ${totalWalkingTime}`);
 
     if (mapViewRef.current) {
       const snapshot = await mapViewRef.current.takeSnapshot({
@@ -186,9 +159,7 @@ export default function WalkScreen() {
       const fileUri = `${assetDir}/${fileName}`;
       await FileSystem.copyAsync({ from: snapshot, to: fileUri });
 
-      
-
-     // 이미지 업로드
+      // 이미지 업로드
       const formData = new FormData();
       formData.append('image', {
         uri: fileUri,
@@ -202,23 +173,49 @@ export default function WalkScreen() {
             'Content-Type': 'multipart/form-data',
           },
         });
-    
-        if (response.status === 201) {
-          setWalkingImageUrl(response.data);
-          console.log('Uploaded Image Uri (1): ' + response.data); // 서버 응답 로그 출력
-          console.log('File uploaded successfully');
 
+        if (response.status === 201) {
+          const imageUrl = response.data;
+          console.log('Uploaded Image Uri: ' + imageUrl); // 서버 응답 로그 출력
+
+          // 이미지 업로드 성공 후 산책 데이터 저장
+          try {
+            const userId = 2; // Replace with actual user id
+            //console.log("null이면 안됨 : " + imageUrl);
+            await axios.post(`${BASE_URL}/walking/insert/${userId}`, {
+              walking_start: DBStart,
+              walking_end: DBEnd,
+              walking_distance: parseFloat(totalDistance.toFixed(2)),
+              walking_calorie: parseInt(calories.toFixed(2)),
+              walking_speed: parseFloat(totalDistance / totalWalkingTime),
+              imageUrl: imageUrl, // 이미지 URL 추가
+            }, {
+              headers: {
+                'Content-Type': 'application/json', // Content-Type 헤더를 JSON으로 설정
+              },
+            });
+            console.log("Walk data saved successfully");
+          } catch (error) {
+            if (error.response) {
+              console.error('Error adding walking: ', error); // 서버 응답이 있는 경우
+            } else {
+              console.error('Error adding walking: ', error); // 서버 응답이 없는 경우
+            }
+          }
         } else {
           console.log('Failed to upload file');
         }
-      } 
-      catch (error) {
+      } catch (error) {
         console.error('Error uploading file:', error);
       }
-
+    } else {
+      console.warn("시작 시간 또는 종료 시간이 없습니다.");
     }
-    setIsRunning(false);
-  };
+  }
+
+  setIsRunning(false);
+};
+
 
   const formatTime = (time) => {
     const hours = Math.floor(time / 3600);

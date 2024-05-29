@@ -45,7 +45,6 @@ export default function HomeScreen() {
           }
         }
       }
-  
       setPosts(postsData);
     } catch (error) {
       console.error("Error loading posts: ", error);
