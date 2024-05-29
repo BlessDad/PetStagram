@@ -234,7 +234,7 @@ const handleDeleteComment = async (commentId, postId) => {
       <View key={post.id} style={styles.postContainer}>
         <View style={styles.profileRow}>
           <View style={styles.profileImageContainer}>
-            <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
+            <Image style={styles.profileImage} source={ {uri : `${BASE_URL}/userUploads/${post.user_id}.jpg`}} />
             <Text style={styles.username}>{post.userNickname}</Text>
           </View>
           <View style={styles.buttonRow}>
