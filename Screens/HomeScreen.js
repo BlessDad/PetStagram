@@ -18,6 +18,9 @@ export default function HomeScreen() {
   const [editingContent, setEditingContent] = useState('');
   const [editingImageURI, setEditingImageURI] = useState(null);
 
+  const [tags, setTags] = useState({});
+  
+
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -30,6 +33,16 @@ export default function HomeScreen() {
   
       for (const post of postsData) {
         const userId = post.user_id;
+        //console.log(post.id);
+        
+        
+        const tagResponse = await axios.get(`${BASE_URL}/tag/getTag/${post.id}`);
+        const tagName = tagResponse.data.map(tag => tag.tag_name);
+        post.setTags = tagName;
+        console.log(post.setTags);
+        //setTags(tagName);
+
+
         if (userNicknameCache[userId]) {
           // 캐시에 있는 닉네임 사용
           post.userNickname = userNicknameCache[userId];
@@ -295,6 +308,7 @@ const handleDeleteComment = async (commentId, postId) => {
             <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
             <Text style={styles.postText}>
               <Text style={styles.username}>{post.title}</Text> {post.content}
+              <Text style={styles.username}>#{post.setTags}</Text>
             </Text>
           </View>
         )}
