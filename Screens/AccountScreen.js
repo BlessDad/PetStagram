@@ -28,9 +28,10 @@ export default function AccountScreen({ navigation }) {
     console.log(userData);
   }, [userData]);
 
+  const userId = 3;
+
   const fetchUserData = async () => {
     try {
-      const userId = 3; // 임의로 설정한 userId
       const userResponse = await axios.get(`${BASE_URL}/user/getUser/${userId}`);
       const user = userResponse.data[0]; // 첫 번째 요소를 사용
       setUserData(user);
@@ -101,7 +102,7 @@ export default function AccountScreen({ navigation }) {
         <View style={styles.profileContainer}>
           <Image
             style={styles.profileImage}
-            source={require('../assets/profile.jpg')}
+            source={{ uri: `${BASE_URL}/userUploads/${userId}.jpg` }} 
           />
           <View style={styles.userInfo}>
             <View style={styles.statsContainer}>

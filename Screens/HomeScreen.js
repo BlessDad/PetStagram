@@ -18,6 +18,9 @@ export default function HomeScreen() {
   const [editingContent, setEditingContent] = useState('');
   const [editingImageURI, setEditingImageURI] = useState(null);
 
+  const [tags, setTags] = useState({});
+  
+
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -30,6 +33,16 @@ export default function HomeScreen() {
   
       for (const post of postsData) {
         const userId = post.user_id;
+        //console.log(post.id);
+        
+        
+        const tagResponse = await axios.get(`${BASE_URL}/tag/getTag/${post.id}`);
+        const tagName = tagResponse.data.map(tag => tag.tag_name);
+        post.setTags = tagName;
+        console.log(post.setTags);
+        //setTags(tagName);
+
+
         if (userNicknameCache[userId]) {
           // 캐시에 있는 닉네임 사용
           post.userNickname = userNicknameCache[userId];
@@ -234,7 +247,7 @@ const handleDeleteComment = async (commentId, postId) => {
       <View key={post.id} style={styles.postContainer}>
         <View style={styles.profileRow}>
           <View style={styles.profileImageContainer}>
-            <Image style={styles.profileImage} source={require('../assets/profile.jpg')} />
+            <Image style={styles.profileImage} source={{ uri: `${BASE_URL}/userUploads/${post.user_id}.jpg` }} />
             <Text style={styles.username}>{post.userNickname}</Text>
           </View>
           <View style={styles.buttonRow}>
@@ -293,9 +306,11 @@ const handleDeleteComment = async (commentId, postId) => {
         ) : (
           <View>
             <Text style={styles.likeText}>좋아요 {likeCounts[post.id] || 0}개</Text>
-            <Text style={styles.postText}>
-              <Text style={styles.username}>{post.title}</Text> {post.content}
-            </Text>
+            <View style={styles.postTextContainer}>
+              <Text style={styles.postTitle}>{post.title}</Text>
+              <Text style={styles.postContent}>{post.content}</Text>
+              <Text style={styles.postTags}>#{post.setTags}</Text>
+            </View>
           </View>
         )}
   
@@ -330,7 +345,7 @@ const handleDeleteComment = async (commentId, postId) => {
       </View>
     );
   };  
-
+  
   return (
     <FlatList
       contentContainerStyle={styles.scrollContainer}
@@ -345,134 +360,156 @@ const handleDeleteComment = async (commentId, postId) => {
       }
     />
   );
-}
-
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  postContainer: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
-  },
-  profileRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  profileImageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  profileImage: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 10,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  postImage: {
-    width: '100%',
-    height: 375,
-    marginBottom: 10,
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  buttonContainer: {
-    marginRight: 15,
-  },
-  buttonImage: {
-    width: 30,
-    height: 30,
-  },
-  lastButton: {
-    marginLeft: 'auto',
-  },
-  likeText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  commentContainer: {
-    marginTop: 10,
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 5,
-  },
-  commentInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  commentInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  submitButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginLeft: 10,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  commentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  deleteButton: {
-    marginLeft: 10,
-  },
-  deleteButtonText: {
-    color: 'red',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  },
-  imagePlaceholder: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'gray',
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  image: {
-    width: 200,
-    height: 200,
-    borderRadius: 10,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-  },
-  postText: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-});
+  }
+  
+  const styles = StyleSheet.create({
+    scrollContainer: {
+      flexGrow: 1,
+    },
+    postContainer: {
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: '#CCCCCC',
+    },
+    profileRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    profileImageContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    profileImage: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      marginRight: 10,
+    },
+    username: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    usercontent: {
+      fontSize: 16,
+      marginBottom: 10,
+    },
+    usertag: {
+      fontSize: 16,
+      marginBottom: 10,
+      color: 'blue', // 파란색으로 설정
+    },
+    postImage: {
+      width: '100%',
+      height: 375,
+      marginBottom: 10,
+    },
+    buttonsContainer: {
+      flexDirection: 'row',
+      marginBottom: 10,
+    },
+    buttonContainer: {
+      marginRight: 15,
+    },
+    buttonImage: {
+      width: 30,
+      height: 30,
+    },
+    lastButton: {
+      marginLeft: 'auto',
+    },
+    likeText: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    commentContainer: {
+      marginTop: 10,
+      backgroundColor: '#f0f0f0',
+      padding: 10,
+      borderRadius: 5,
+    },
+    commentInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    commentInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: '#CCCCCC',
+      borderRadius: 20,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    submitButton: {
+      backgroundColor: '#007AFF',
+      paddingVertical: 8,
+      paddingHorizontal: 15,
+      borderRadius: 20,
+      marginLeft: 10,
+    },
+    submitButtonText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
+    commentItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 5,
+    },
+    deleteButton: {
+      marginLeft: 10,
+    },
+    deleteButtonText: {
+      color: 'red',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 5,
+      padding: 10,
+      marginBottom: 10,
+    },
+    imagePlaceholder: {
+      width: 200,
+      height: 200,
+      backgroundColor: '#f0f0f0',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: 'gray',
+      marginTop: 10,
+      marginBottom: 10,
+    },
+    image: {
+      width: 200,
+      height: 200,
+      borderRadius: 10,
+      marginTop: 10,
+      marginBottom: 10,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+    },
+    postTextContainer: {
+      marginBottom: 10,
+    },
+    postTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    postContent: {
+      fontSize: 16,
+      marginBottom: 2,
+    },
+    postTags: {
+      fontSize: 16,
+      color: 'blue',
+    },
+  });
