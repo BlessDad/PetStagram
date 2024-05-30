@@ -20,10 +20,6 @@ export default function HomeScreen() {
 
   const [tags, setTags] = useState({});
   
-
-  const [tags, setTags] = useState({});
-  
-
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -36,25 +32,12 @@ export default function HomeScreen() {
   
       for (const post of postsData) {
         const userId = post.user_id;
-        //console.log(post.id);
-        
         
         const tagResponse = await axios.get(`${BASE_URL}/tag/getTag/${post.id}`);
         const tagName = tagResponse.data.map(tag => tag.tag_name);
         post.setTags = tagName;
         console.log(post.setTags);
         //setTags(tagName);
-
-
-        //console.log(post.id);
-        
-        
-        const tagResponse = await axios.get(`${BASE_URL}/tag/getTag/${post.id}`);
-        const tagName = tagResponse.data.map(tag => tag.tag_name);
-        post.setTags = tagName;
-        console.log(post.setTags);
-        //setTags(tagName);
-
 
         if (userNicknameCache[userId]) {
           // 캐시에 있는 닉네임 사용
@@ -224,7 +207,6 @@ export default function HomeScreen() {
         Alert.alert('댓글 내용이 비어 있습니다', '댓글을 입력해주세요.');
     }
 };
-
 
 const handleDeleteComment = async (commentId, postId) => {
   try {
@@ -404,15 +386,6 @@ const handleDeleteComment = async (commentId, postId) => {
       fontSize: 16,
       fontWeight: 'bold',
       marginBottom: 10,
-    },
-    usercontent: {
-      fontSize: 16,
-      marginBottom: 10,
-    },
-    usertag: {
-      fontSize: 16,
-      marginBottom: 10,
-      color: 'blue', // 파란색으로 설정
     },
     postImage: {
       width: '100%',
