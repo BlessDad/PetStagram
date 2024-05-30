@@ -21,6 +21,9 @@ export default function HomeScreen() {
   const [tags, setTags] = useState({});
   
 
+  const [tags, setTags] = useState({});
+  
+
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -33,6 +36,16 @@ export default function HomeScreen() {
   
       for (const post of postsData) {
         const userId = post.user_id;
+        //console.log(post.id);
+        
+        
+        const tagResponse = await axios.get(`${BASE_URL}/tag/getTag/${post.id}`);
+        const tagName = tagResponse.data.map(tag => tag.tag_name);
+        post.setTags = tagName;
+        console.log(post.setTags);
+        //setTags(tagName);
+
+
         //console.log(post.id);
         
         
