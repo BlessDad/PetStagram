@@ -179,13 +179,13 @@ export default function App() {
           placeholderTextColor={classification ? 'black' : 'lightgray'}
         />
       </View>
-      <View style={styles.inputContainer}>
+      {/* <View style={styles.inputContainer}>
         <Ionicons name="happy" size={24} />
         <TextInput
           style={styles.input}
           placeholder="#감정"
         />
-      </View>
+      </View> */}
       <View style={styles.buttonWrapper}>
         <View style={styles.buttonContainer}>
           <Button title="분석하기" onPress={classifyImage} />
