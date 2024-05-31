@@ -28,7 +28,7 @@ export default function AccountScreen({ navigation }) {
     console.log(userData);
   }, [userData]);
 
-  const userId = 3;
+  const userId = 5;
 
   const fetchUserData = async () => {
     try {

@@ -151,7 +151,7 @@ export default function App() {
         )}
       </TouchableOpacity>
       <View style={styles.inputContainer}>
-        <Ionicons name="person" size={24} />
+        <Ionicons name="menu" size={24} />
         <TextInput
           style={styles.input}
           value={title}
